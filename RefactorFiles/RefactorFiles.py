@@ -37,46 +37,67 @@ def ExtractComment(lines):
             results.append('  ' + sRes[0]);
     return results;
 
-
-#TODO multiline list of arguments
 #--------------------------------------------------------------------------------------------------------------
-# reading from file
-lines = [];
-inputFile = open('text.cpp','r+');
-for line in inputFile:
-    lines.append(line);
+def RefactorFile(fileName):
 
-inputFile.close();
+    # reading from file
+    lines = [];
+    inputFile = open(fileName,'r+');
+    for line in inputFile:
+        lines.append(line);
 
-results = [];
-for i in range(0, len(lines)):
-    # find the beginning of func definition
-    result = re.findall(r'\w+::\w+\(.*\)?(?:\s?const)?[^;]\n$',lines[i]);
-    if (result):
-        # ensure we found func
-        postResult = re.findall(r'^(?:\s)*(?:{|:)',lines[i+1]);
-        resultENd = re.findall(r'{$',lines[i]);
-        isCommentOk = (0 <= i-2) and is_empty(re.findall(r'\*/', lines[i-2]));
-        if ((postResult or resultENd) and not isCommentOk):
-            # try to find wrong comments before
-            oldComments = [];
-            for j in range(1, i):
-                delres = re.findall(r'^(?:(?://)|\s*$)', lines[i-j]);
-                if (delres):
-                    oldComments.append(lines[i-j]);
-                    results.pop();
-                else:
-                    break;
+    inputFile.close();
 
-            results += GetComment( ExtractComment(oldComments) );
+    results = [];
+    for i in range(0, len(lines)):
+        # find the beginning of func definition
+        result = re.findall(r'\w+::\w+\(.*\)?(?:\s?const)?[^;]\n$',lines[i]);
+        if (result):
+            # ensure we found func
+            postResult = re.findall(r'^(?:\s)*(?:{|:)',lines[i+1]);
+            resultENd = re.findall(r'{$',lines[i]);
+            isCommentOk = (0 <= i-2) and is_empty(re.findall(r'\*/', lines[i-2]));
+            if ((postResult or resultENd) and not isCommentOk):
+                # try to find wrong comments before
+                oldComments = [];
+                for j in range(1, i):
+                    delres = re.findall(r'^(?:(?://)|\s*$)', lines[i-j]);
+                    if (delres):
+                        oldComments.append(lines[i-j]);
+                        results.pop();
+                    else:
+                        break;
 
-    results.append(lines[i]);
+                results += GetComment( ExtractComment(oldComments) );
 
-# writing into file
-outputFile = open('res.cpp','r+');
-outputFile.truncate(0);
+        results.append(lines[i]);
 
-for result in results:
-    outputFile.write(result)
+    # writing into file
+    outputFile = open('res.cpp','r+');
+    outputFile.truncate(0);
 
-outputFile.close();
+    for result in results:
+        outputFile.write(result)
+
+    outputFile.close();
+
+#--------------------------------------------------------------------------------------------------------------
+def Removets(fileName):
+
+    # reading from file
+    lines = [];
+    inputFile = open(fileName,'r+');
+    for line in inputFile:
+        lines.append(line);
+
+    results = [];
+    for i in range(0, len(lines)):
+        lines[i] = lines[i].rstrip();
+
+    # writing into file
+    inputFile.truncate(0);
+
+    for result in lines:
+        outputFile.write(result)
+
+    inputFile.close();
