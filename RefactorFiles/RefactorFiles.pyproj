@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>ff7f06ec-062e-4b11-ad0f-866e0a8bfc31</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>RefactorFiles.py</StartupFile>
+    <StartupFile>RmTrailingSpaces.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +22,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="FixFuncsHeads.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="RefactorFiles.py" />
+    <Compile Include="RmTrailingSpaces.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ScriptsMgr.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

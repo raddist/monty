@@ -1,5 +1,5 @@
-п»ї////////////////////////////////////////////////////////////////////////////////
-//                                                               
+////////////////////////////////////////////////////////////////////////////////
+//
 // #include <k3dobj01\shell3d.h>
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,18 +48,18 @@ using namespace c3d;
 
 extern HINSTANCE module;
 
-// РїРѕСЃС‚СЂРѕРёС‚РµР»СЊ СЃРіРёР±РѕРІ РґР»СЏ РѕРїРµСЂР°С†РёРё СЃРіРёР± Рё СЃРіРёР± РїРѕ Р»РёРЅРёРё
+// построитель сгибов для операции сгиб и сгиб по линии
 /*
-СЃСѓС‰РµСЃС‚РІСѓРµС‚ С‚РѕР»СЊРєРѕ РЅР° СЃРµР°РЅСЃ РїРѕСЃС‚СЂРѕРµРЅРёСЏ/РїРµСЂРµСЃС‚СЂРѕРµРЅРёСЏ
-СЂР°Р±РѕС‚Р°РµС‚ РІ PrepareLocalSolid, РѕРґРёРЅ РґР»СЏ РІСЃРµС… Р·Р°С…РѕРґРѕРІ РїРѕ РЅРёС‚РєР°Рј
+существует только на сеанс построения/перестроения
+работает в PrepareLocalSolid, один для всех заходов по ниткам
 */
 static CreatorForBendUnfoldParams * creatorBends = nullptr;
-// РїРѕСЃС‚СЂРѕРёС‚РµР»СЊ СЃРіРёР±РѕРІ РґР»СЏ РѕРїРµСЂР°С†РёРё РїРѕРґСЃРµС‡РєР°
+// построитель сгибов для операции подсечка
 static CreatorForBendHookUnfoldParams * creatorBendHooks = nullptr;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// РєР»Р°СЃСЃР° РѕРїРµСЂР°С†РёР№ СЃРіРёР±(Р±Р°Р·РѕРІС‹Р№)
+// класса операций сгиб(базовый)
 //
 ////////////////////////////////////////////////////////////////////////////////
 ShMtBaseBend::ShMtBaseBend( IfUniqueName * un )
@@ -73,7 +73,7 @@ ShMtBaseBend::ShMtBaseBend( IfUniqueName * un )
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+// конструктор дублирования
 // ---
 ShMtBaseBend::ShMtBaseBend( const ShMtBaseBend & other )
   : PartOperation( other ),
@@ -137,7 +137,7 @@ bool ShMtBaseBend::IsThisParent( uint8 relType, const WrapSomething & parent ) c
 
 
 //------------------------------------------------------------------------------
-// СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ РґСЂСѓРіРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+// установить параметры по другому объекту
 //---
 void ShMtBaseBend::Assign( const PrObject &other ) {
   PartOperation::Assign( other );
@@ -156,7 +156,7 @@ void ShMtBaseBend::Assign( const PrObject &other ) {
 
 
 //-----------------------------------------------------------------------------
-/// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+/// изменить уникальное имя параметра
 //---
 void ShMtBaseBend::RenameUnique( IfUniqueName & un )
 {
@@ -178,7 +178,7 @@ bool ShMtBaseBend::IsModified( ModifiedPar & par ) const
 
 
 //------------------------------------------------------------------------------
-// РњРѕРґРёС„РёС†РёСЂРѕРІР°РЅ Р»Рё РєР°РєРѕР№-Р»РёР±Рѕ РёР· РїР°СЂР°РјРµС‚СЂРѕРІ, СЃРІСЏР·Р°РЅРЅС‹С… СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё
+// Модифицирован ли какой-либо из параметров, связанных с переменными
 // ---
 bool ShMtBaseBend::IsAnyVariableParameterModified() const
 {
@@ -186,7 +186,7 @@ bool ShMtBaseBend::IsAnyVariableParameterModified() const
 }
 
 //------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+// задать кривую сгиба
 // ---
 void ShMtBaseBend::SetObject( const WrapSomething * wrapper ) {
   m_bendObject.SetObject( 0, wrapper );
@@ -194,7 +194,7 @@ void ShMtBaseBend::SetObject( const WrapSomething * wrapper ) {
 
 
 //------------------------------------------------------------------------------
-// РїРѕР»СѓС‡РёС‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+// получить кривую сгиба
 // ---
 const WrapSomething & ShMtBaseBend::GetObject() const {
   return m_bendObject.GetObjectTrans( 0 );
@@ -203,7 +203,7 @@ const WrapSomething & ShMtBaseBend::GetObject() const {
 
 //------------------------------------------------------------------------------
 /**
-РћР±СЉРµРєС‚ РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚ СЃСЂРµРґРё Р·Р°РїРѕРјРЅРµРЅС‹пїЅ
+Объект присутствует среди запомненых
 */
 //---
 bool ShMtBaseBend::IsObjectExist( const WrapSomething * bend ) const
@@ -213,7 +213,7 @@ bool ShMtBaseBend::IsObjectExist( const WrapSomething * bend ) const
 
 
 //------------------------------------------------------------------------------
-// РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕРїРµСЂР°С†РёРё
+// проверка определенности операции
 // ---
 bool ShMtBaseBend::IsValid() const {
   return PartOperation::IsValid() && !m_bendObject.IsEmpty() && IsValidBends();
@@ -221,7 +221,7 @@ bool ShMtBaseBend::IsValid() const {
 
 
 //-----------------------------------------------------------------------------
-// РІРѕР·РјРѕР¶РЅРѕ РїРѕСЃС‚СЂРѕРµРЅРёРµ Р±РѕР»РµРµ РґРІСѓС… С‚РµР» ??
+// возможно построение более двух тел ??
 //---
 bool ShMtBaseBend::IsPossibleMultiSolid() const {
   return true;
@@ -229,7 +229,7 @@ bool ShMtBaseBend::IsPossibleMultiSolid() const {
 
 
 //------------------------------------------------------------------------------
-// РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+// восстановить связи
 // ---
 bool ShMtBaseBend::RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath )
 {
@@ -241,7 +241,7 @@ bool ShMtBaseBend::RestoreReferences( PartRebuildResult &result, bool allRefs, C
 
 
   //------------------------------------------------------------------------------
-  // РћС‡РёСЃС‚РёС‚СЊ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ soft = true - С‚РѕР»СЊРєРѕ РІСЂР°РїРµСЂС‹ (РЅРµ С‚СЂРѕРіР°СЏ РёРјРµРЅР°)
+  // Очистить опорные объекты soft = true - только враперы (не трогая имена)
   // ---
 void ShMtBaseBend::ClearReferencedObjects( bool soft )
 {
@@ -251,7 +251,7 @@ void ShMtBaseBend::ClearReferencedObjects( bool soft )
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
+// Заменить ссылки на объекты
 // ---
 bool ShMtBaseBend::ChangeReferences( ChangeReferencesData & changedRefs )
 {
@@ -260,7 +260,7 @@ bool ShMtBaseBend::ChangeReferences( ChangeReferencesData & changedRefs )
 
 
 //------------------------------------------------------------------------------
-// СѓСЃС‚Р°РЅРѕРІРєР° РїР°СЂР°РјРµС‚СЂРѕРІ Рё СЃРѕР·РґР°РЅРёРµ Solida РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё С„Р°РЅС‚РѕРјР°
+// установка параметров и создание Solida для отрисовки фантома
 // ---
 bool ShMtBaseBend::MakePhantom( IfComponent & compOwner )
 {
@@ -282,7 +282,7 @@ bool ShMtBaseBend::InitPhantom( const IfComponent &operOwner, bool setNames )
 
 
 //------------------------------------------------------------------------------
-// РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+// набирает массив предупреждений из ресурса
 // ---
 void ShMtBaseBend::WhatsWrong( WarningsArray & warnings ) {
   PartOperation::WhatsWrong( warnings );
@@ -304,7 +304,7 @@ IfFeature::ItemStateFlags ShMtBaseBend::GetNodeState() const
 
 
 //------------------------------------------------------------------------------
-// РєР»СЋС‡Рё РїРѕРёСЃРєР° Р±РёС‚РјР°РїРѕРІ РІ РґРµСЂРµРІРµ
+// ключи поиска битмапов в дереве
 // ---
 void ShMtBaseBend::GetBmpKeys( short int &k1, short int &k2 ) const {
   k1 = ::hash( ::pureName( GetTypeInfo().name() ) );
@@ -313,11 +313,11 @@ void ShMtBaseBend::GetBmpKeys( short int &k1, short int &k2 ) const {
 
 
 //------------------------------------------------------------------------------
-// СЂР°Р·Р±РѕСЂ СЃРІРѕРёС… VEF'РѕРІ
+// разбор своих VEF'ов
 // ---
 void ShMtBaseBend::ResetPrimitives( const IfComponent &compOwner )
 {
-  PartOperation::ResetPrimitives( compOwner ); // РІС‹Р±СЂР°С‚СЊ СЃРІРѕРё VEF
+  PartOperation::ResetPrimitives( compOwner ); // выбрать свои VEF
   InitSheetMetalFaces( compOwner, GetPartOperationResult(), MainId() );
 
   ResetPrimitivesInSubBends( compOwner );
@@ -326,7 +326,7 @@ void ShMtBaseBend::ResetPrimitives( const IfComponent &compOwner )
 
 //------------------------------------------------------------------------------
 /**
-РІС‹СЃС‚Р°РІРёС‚СЊ С„Р»Р°Рі РІСЃРµРј РїСЂРёРјРёС‚РёРІР°Рј
+выставить флаг всем примитивам
 \param set -
 */
 //---
@@ -339,7 +339,7 @@ void ShMtBaseBend::SetMathFlag( bool set )
 
 //------------------------------------------------------------------------------
 /**
-СЃРЅСЏС‚СЊ РІР»Р°РґРµР»СЊС†Р° РІСЃРµРј РїСЂРёРјРёС‚РёРІР°Рј
+снять владельца всем примитивам
 */
 //---
 void ShMtBaseBend::SetVEFZeroOwner()
@@ -352,7 +352,7 @@ void ShMtBaseBend::SetVEFZeroOwner()
 
 //------------------------------------------------------------------------------
 /**
-РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ РѕРїРµСЂР°С†РёСЋ
+пересчитать операцию
 \param lastResult -
 */
 //---
@@ -382,7 +382,7 @@ unsigned int ShMtBaseBend::HasSubFeatures( IfFeature * comp )
 
 
 //------------------------------------------------------------------------------
-// РІС‹РґР°С‚СЊ РјР°СЃСЃРёРІ РїР°СЂР°РјРµС‚СЂРѕРІ, СЃРІСЏР·Р°РЅРЅС‹С… СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё
+// выдать массив параметров, связанных с переменными
 // ---
 void ShMtBaseBend::GetVariableParameters( VarParArray & parVars, ParCollType parCollType )
 {
@@ -392,9 +392,9 @@ void ShMtBaseBend::GetVariableParameters( VarParArray & parVars, ParCollType par
 
 
 //------------------------------------------------------------------------------
-// СЃР±СЂРѕСЃРёС‚СЊ С„Р»Р°РіРё РјРѕРґРёС„РёС†РёСЂРѕРІР°РЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ
+// сбросить флаги модифицирования параметров
 //---
-void ShMtBaseBend::ClearModifiedFlags( VarParArray & array ) // СЃР±СЂРѕСЃРёС‚СЊ РїСЂРёР·РЅР°РєРё РјРѕРґРёС„РёРєР°С†РёРё РІ РїР°СЂР°РјРµС‚СЂР°пїЅ
+void ShMtBaseBend::ClearModifiedFlags( VarParArray & array ) // сбросить признаки модификации в параметрах
                                                              //SA K9 31.10.2006 void ShMtBaseBend::ClearModifiedFlags( FDPArray<VarParameter> & array )
 {
   PartOperation::ClearModifiedFlags( array );
@@ -403,7 +403,7 @@ void ShMtBaseBend::ClearModifiedFlags( VarParArray & array ) // СЃР±СЂРѕСЃРёС‚СЊ
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РєРѕРЅС‡РµРЅРѕ С‡С‚РµРЅРёРµ
+// Закончено чтение
 // ---
 void ShMtBaseBend::AdditionalReadingEnd( PartRebuildResult & lastResult )
 {
@@ -416,7 +416,7 @@ void ShMtBaseBend::AdditionalReadingEnd( PartRebuildResult & lastResult )
 
 //------------------------------------------------------------------------------
 /**
-Р—Р°РєРѕС‡РµРЅРѕ С‡С‚РµРЅРёРµ
+Закочено чтение
 */
 //---
 void ShMtBaseBend::ReadingEnd()
@@ -443,7 +443,7 @@ std::auto_ptr<PointersIterator<VariableParametersOwner>> ShMtBaseBend::GetSubPar
 
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ РёР· РїРѕС‚РѕРєР°
+// Чтение из потока
 // ---
 void ShMtBaseBend::Read( reader &in, ShMtBaseBend * obj )
 {
@@ -453,7 +453,7 @@ void ShMtBaseBend::Read( reader &in, ShMtBaseBend * obj )
   {
     ReferenceContainerFix bendObject( 1 );
     in >> bendObject;
-    // Р Р°РЅСЊС€Рµ РЅРµ РјРѕРіР»Рѕ Р±С‹С‚СЊ Р±РѕР»РµРµ РѕРґРЅРѕРіРѕ СЃРіРёР±Р°, РїРѕСЌС‚РѕРјСѓ РѕС‡РёСЃС‚РёРј РІСЃРµ, Р° РїРѕС‚РѕРј РѕРґРёРЅ РїСЂРѕС‡РёС‚Р°РЅРЅС‹Р№ РґРѕР±Р°РІРёРј
+    // Раньше не могло быть более одного сгиба, поэтому очистим все, а потом один прочитанный добавим
     obj->m_bendObject.Reset();
     obj->m_bendObject.Add( bendObject[0]->Duplicate() );
   }
@@ -466,11 +466,11 @@ void ShMtBaseBend::Read( reader &in, ShMtBaseBend * obj )
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РІ РїРѕС‚РѕРє
+// Запись в поток
 // ---
 void ShMtBaseBend::Write( writer &out, const ShMtBaseBend * obj ) {
   if ( out.AppVersion() < 0x06000033L )
-    out.setState( io::cantWriteObject ); // СЃРїРµС†РёР°Р»СЊРЅРѕ РІРІРµРґРµРЅРЅС‹Р№ С‚РёРї РѕС€РёР±РѕС‡РЅРѕР№ СЃРёС‚СѓР°С†РёРё
+    out.setState( io::cantWriteObject ); // специально введенный тип ошибочной ситуации
   else {
     WriteBase( out, static_cast<const PartOperation *>(obj) );
 
@@ -485,7 +485,7 @@ void ShMtBaseBend::Write( writer &out, const ShMtBaseBend * obj ) {
 
     WriteStraightenOper( out, obj );
 
-    // РЎРЎ Рљ8+ РјРЅРѕРіРѕС‚РµР»СЊРЅРѕСЃС‚СЊ
+    // СС К8+ многотельность
     if ( out.AppVersion() >= 0x0800011AL )
       obj->WriteSurf( out );
   }
@@ -494,7 +494,7 @@ void ShMtBaseBend::Write( writer &out, const ShMtBaseBend * obj ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// РљР»Р°СЃСЃ РѕРїРµСЂР°С†РёРё СЃРіРёР±
+// Класс операции сгиб
 //
 ////////////////////////////////////////////////////////////////////////////////
 class ShMtBend : public IfShMtBend,
@@ -511,8 +511,8 @@ class ShMtBend : public IfShMtBend,
 private:
   enum TypeCircuitBend
   {
-    tcb_AdjoiningBetween = 0x1, // Р—Р°РјС‹РєР°РЅРёРµ СЃРјРµР¶РЅС‹С… СѓРіР»РѕРІ
-    tcb_AdjoiningBeginEnd = 0x2, // Р—Р°РјС‹РєР°РЅРёРµ РІРЅР°С‡Р°Р»Рµ Рё РІРєРѕРЅС†Рµ
+    tcb_AdjoiningBetween = 0x1, // Замыкание смежных углов
+    tcb_AdjoiningBeginEnd = 0x2, // Замыкание вначале и вконце
   };
 
   typedef uint TypeCircuitBendFlag;
@@ -522,14 +522,14 @@ private:
 
 public:
 
-  ShMtBendParameters     m_params;     ///< РџР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё
-  ReferenceContainerFix  m_refObjects; ///< РЎСЃС‹Р»РєРё РЅР° Р°СЃСЃРѕС†РёР°С‚РёРІРЅС‹Рµ РѕР±СЉРµРєС‚С‹
+  ShMtBendParameters     m_params;     ///< Параметры операции
+  ReferenceContainerFix  m_refObjects; ///< Ссылки на ассоциативные объекты
 
 public:
-  /// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РЅРёС‡РµРіРѕ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°СЏ, СЌСЃРєРёР· РґР°РґРёРј РїРѕС‚РѕРј
-  /// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°
+  /// Конструктор, просто запоминает параметры ничего не рассчитывая, эскиз дадим потом
+  /// Конструктор для использования в конструкторе процесса
   ShMtBend( const ShMtBendParameters &, IfUniqueName * un );
-  /// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
+  /// Конструктор копирования
   ShMtBend( const ShMtBend & );
 
 public:
@@ -538,23 +538,23 @@ public:
   virtual bool                              IsObjectExist( const WrapSomething * bend ) const { return ShMtBaseBend::IsObjectExist( bend ); }
   virtual double                            GetOwnerAbsAngle() const override;  ///
   virtual double                            GetOwnerValueBend() const override;  ///
-  virtual double                            GetOwnerAbsRadius() const override;  /// Р’РЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
-  virtual bool                              IsOwnerInternalRad() const override;  /// РџРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ?
-  virtual UnfoldType                        GetOwnerTypeUnfold() const override;  /// Р”Р°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
-  virtual void                              SetOwnerTypeUnfold( UnfoldType t ) override; /// Р—Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+  virtual double                            GetOwnerAbsRadius() const override;  /// Внутренний радиус сгиба
+  virtual bool                              IsOwnerInternalRad() const override;  /// По внутреннему радиусу?
+  virtual UnfoldType                        GetOwnerTypeUnfold() const override;  /// Дать тип развертки
+  virtual void                              SetOwnerTypeUnfold( UnfoldType t ) override; /// Задать тип развертки
   virtual bool                              GetOwnerFlagByBase() const override;  ///
   virtual void                              SetOwnerFlagByBase( bool val ) override; ///
-  virtual double                            GetOwnerCoefficient() const override;  /// РљРѕСЌС„С„РёС†РёРµРЅС‚
-  virtual bool                              IfOwnerBaseChanged( IfComponent * trans ) override; /// Р•СЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ-Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
-  virtual double                            GetThickness() const override;   /// Р”Р°С‚СЊ С‚РѕР»С‰РёРЅСѓ
-  virtual void                              SetThickness( double ) override; /// Р—Р°РґР°С‚СЊ С‚РѕР»С‰РёРЅСѓ
+  virtual double                            GetOwnerCoefficient() const override;  /// Коэффициент
+  virtual bool                              IfOwnerBaseChanged( IfComponent * trans ) override; /// Если изменились какие-либо параметры, и есть чтение коэф из базы, то прочитать базу
+  virtual double                            GetThickness() const override;   /// Дать толщину
+  virtual void                              SetThickness( double ) override; /// Задать толщину
 
                                                                              //IfShMtCircuitBend
-                                                                             /// РјРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЂР°Р·РґРµР»РєСѓ СЃРјРµР¶РЅС‹С… СѓРіР»РѕРІ
+                                                                             /// можно ли использовать разделку смежных углов
   virtual       bool            IsCanoutAdjoiningBetween() const override;
-  /// РјРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЂР°Р·РґРµР»РєСѓ РІРЅР°С‡Р°Р»Рµ
+  /// можно ли использовать разделку вначале
   virtual       bool            IsCanoutAdjoiningBegin() override;
-  /// РјРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЂР°Р·РґРµР»РєСѓ РІРєРѕРЅС†Рµ
+  /// можно ли использовать разделку вконце
   virtual       bool            IsCanoutAdjoiningEnd() override;
   virtual       bool            IsClosedPath() const  override;
   virtual ShMtCircuitBendParameters & GetCircuitParameters() override { return m_params; }
@@ -562,7 +562,7 @@ public:
 
   //------------------------------------------------------------------------------
   // IfSheetMetalOperation
-  // РїРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+  // перед тем как заканчиваем редактирование
   virtual void                              EditingEnd( const IfSheetMetalOperation & iniObj, const IfComponent & editComp ) override;
 
   //------------------------------------------------------------------------------
@@ -570,28 +570,28 @@ public:
   virtual void GetRefContainers( FDPArray<AbsReferenceContainer> & ) override;
 
   //------------------------------------------------------------------------------
-  // Р РµР°Р»РёР·Р°С†РёСЏ IfShMtBend
+  // Реализация IfShMtBend
   virtual void                              SetParameters( const ShMtBaseBendParameters & ) override;
   virtual ShMtBaseBendParameters          & GetParameters() const override;
   virtual void                              SetBendObject( const WrapSomething * ) override;
   virtual const WrapSomething &             GetBendObject() const override;
 
 #ifdef MANY_THICKNESS_BODY_SHMT
-  // РіРѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+  // годится ли пришедший объект
   virtual bool                              IsSuitedObject( const WrapSomething & ) override;
 #else
   virtual bool                              IsSuitedObject( const WrapSomething &, double ) override;
 #endif
 
-  virtual bool                              IsValid() const override;  // РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕР±СЉРµРєС‚Р°
+  virtual bool                              IsValid() const override;  // проверка определенности объекта
                                                                        //---------------------------------------------------------------------------
                                                                        // IfCopibleObject
-                                                                       // РЎРѕР·РґР°С‚СЊ РєРѕРїРёСЋ РѕР±СЉРµРєС‚Р°
+                                                                       // Создать копию объекта
   virtual IfPartObjectCopy * CreateObjectCopy( IfComponent & compOwner ) const override;
-  // РЎР»РµРґСѓРµС‚ РєРѕРїРёСЂРѕРІР°С‚СЊ РЅР° СѓРєР°Р·Р°РЅРЅРѕРј РєРѕРјРїРѕРЅРµРЅС‚Рµ
+  // Следует копировать на указанном компоненте
   virtual bool               NeedCopyOnComp( const IfComponent & component ) const override;
-  virtual bool               IsAuxGeom() const override { return false; } ///< Р­С‚Рѕ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ РіРµРѕРјРµС‚СЂРёСЏ?
-                                                                          /// РњРѕР¶РµС‚ Р»Рё РѕРїРµСЂР°С†РёСЏ РјРµРЅСЏС‚СЃСЏ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј РІ РјР°СЃСЃРёРІРµ
+  virtual bool               IsAuxGeom() const override { return false; } ///< Это вспомогательная геометрия?
+                                                                          /// Может ли операция менятся по параметрам в массиве
   virtual bool               CanCopyByVarsTable() const override { return false; }
 
   virtual bool               AddBendObject( const WrapSomething & ) override;
@@ -604,21 +604,21 @@ public:
 
   //---------------------------------------------------------------------------
   // IfCopibleOperation
-  // РњРѕР¶РЅРѕ Р»Рё РєРѕРїРёСЂРѕРІР°С‚СЊ СЌС‚Сѓ РѕРїРµСЂР°С†РёСЋ РєР°Рє-РЅРёР±СѓРґСЊ РёРЅР°С‡Рµ, РєСЂРѕРјРµ РєР°Рє РіРµРѕРјРµС‚СЂРёС‡РµСЃРєРё?
-  // Рў.Рµ. С‡РµСЂРµР· MakePureSolid РёР»Рё С‡РµСЂРµР· РёРЅС‚РµСЂС„РµР№СЃС‹ IfCopibleOperationOnPlaces,
-  // IfCopibleOperationOnEdges Рё С‚.Рґ.
+  // Можно ли копировать эту операцию как-нибудь иначе, кроме как геометрически?
+  // Т.е. через MakePureSolid или через интерфейсы IfCopibleOperationOnPlaces,
+  // IfCopibleOperationOnEdges и т.д.
   virtual bool                          CanCopyNonGeometrically() const override;
 
   //---------------------------------------------------------------------------
   // IfCopibleObjectOnRefs
-  // Р’С‹РґР°С‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹, РѕР±СЂР°Р·С‹ РєРѕС‚РѕСЂС‹С… РЅСѓР¶РЅРѕ РЅР°Р№С‚Рё РЅР° РЅРµРєРѕС‚РѕСЂРѕРј СЂР°СЃСЃС‚РѕСЏРЅРёРё
+  // Выдать ссылки на объекты, образы которых нужно найти на некотором расстоянии
   virtual const AbsReferenceContainer * GetReferencesToFind( const IfComponent & comp ) override;
 
   //---------------------------------------------------------------------------
   // IfCopibleOperationOnEdges
-  // Р”Р°С‚СЊ РІРЅСѓС‚СЂРµРЅРЅРёРµ СЃСЃС‹Р»РєРё, РєРѕС‚РѕСЂС‹Рµ РїСЂРё РєРѕРїРёСЂРѕРІР°РЅРёРё РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ Р·Р°РјРµРЅРµРЅС‹ РЅР° РЅРѕРІС‹Рµ
+  // Дать внутренние ссылки, которые при копировании должны быть заменены на новые
   virtual bool  GetInternalReferences( AbsReferenceContainer & internalRefs ) override;
-  // РџРѕСЃС‚СЂРѕРёС‚СЊ РѕРїРµСЂР°С†РёСЋ РґР»СЏ РЅР°Р№РґРµРЅРЅС‹С… СЂРµР±РµСЂ.
+  // Построить операцию для найденных ребер.
   virtual uint  MakeSolidOnEdges( MakeSolidParam        & mksdParam,
     const MbPlacement3D   & copyPlace,
     FDPArray<MbCurveEdge> & foundEdges,
@@ -629,48 +629,48 @@ public:
     PArray<MbPositionData> * posData ) override;
 
   //------------------------------------------------------------------------------
-  // РѕР±С‰РёРµ С„СѓРЅРєС†РёРё РѕР±СЉРµРєС‚Р° РґРµС‚Р°Р»Рё
-  virtual uint            GetObjType() const override;                            // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-  virtual uint            GetObjClass() const override;                            // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
-  virtual uint            OperationSubType() const override;   // РІРµСЂРЅСѓС‚СЊ РїРѕРґС‚РёРї РѕРїРµСЂР°С†РёРё
-  virtual void            Assign( const PrObject &other ) override;           // СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ РґСЂСѓРіРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+  // общие функции объекта детали
+  virtual uint            GetObjType() const override;                            // вернуть тип объекта
+  virtual uint            GetObjClass() const override;                            // вернуть общий тип объекта
+  virtual uint            OperationSubType() const override;   // вернуть подтип операции
+  virtual void            Assign( const PrObject &other ) override;           // установить параметры по другому объекту
   virtual PrObject      & Duplicate() const override;
 
-  virtual void            WhatsWrong( WarningsArray & ); // РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+  virtual void            WhatsWrong( WarningsArray & ); // набирает массив предупреждений из ресурса
   virtual void            GetVariableParameters( VarParArray &, ParCollType parCollType ) override;
-  virtual void            ForgetVariables(); // РР  K6+ Р·Р°Р±С‹С‚СЊ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ, СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
-  virtual void            AdditionalReadingEnd( PartRebuildResult & prr ) override; /// РџРѕСЃР»Рµ РІС‹Р·РѕРІР° ReadingEnd
-                                                                                    /// РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+  virtual void            ForgetVariables(); // ИР K6+ забыть все переменные, связанные с параметрами
+  virtual void            AdditionalReadingEnd( PartRebuildResult & prr ) override; /// После вызова ReadingEnd
+                                                                                    /// восстановить связи
   virtual bool            RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath ) override;
   virtual void            ClearReferencedObjects( bool soft ) override;
-  virtual bool            ChangeReferences( ChangeReferencesData & changedRefs ) override; ///< Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
+  virtual bool            ChangeReferences( ChangeReferencesData & changedRefs ) override; ///< Заменить ссылки на объекты
   virtual bool            IsThisParent( uint8 relType, const WrapSomething & ) const override;
-  /// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+  /// изменить уникальное имя параметра
   virtual void            RenameUnique( IfUniqueName & un ) override;
 
-  virtual bool            PrepareToAdding( PartRebuildResult &, PartObject * ) override; //РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ РєРѕ РІСЃС‚СЂР°РёРІР°РЅРёСЋ РІ РјРѕРґРµР»СЊ
+  virtual bool            PrepareToAdding( PartRebuildResult &, PartObject * ) override; //подготовиться ко встраиванию в модель
   virtual bool            InitPhantom( const IfComponent &, bool /*setNames*/ ) override;
-  // СЃРѕР·РґР°РЅРёРµ С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ Solid
-  // РєРѕРґ РѕС€РёР±РєРё РЅРµРѕР±С…РѕРґРёРјРѕ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РїСЂРѕРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ
+  // создание фантомного или результативного Solid
+  // код ошибки необходимо обязательно проинициализировать
   virtual MbSolid       * MakeSolid( uint              & codeError,
     MakeSolidParam    & mksdParam,
     uint                shellThreadId ) override;
 
-  virtual void            PrepareToBuild( const IfComponent & ) override; ///< РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
-  virtual void            PostBuild() override; ///< РЅРµРєРёРµ РґРµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
+  virtual void            PrepareToBuild( const IfComponent & ) override; ///< подготовиться к построению
+  virtual void            PostBuild() override; ///< некие действия после построения
   virtual bool            CopyInnerProps( const IfPartObject& source,
     uint sourceSubObjectIndex,
     uint destSubObjectIndex ) override;
 
-  /// РџРѕРґРіРѕС‚РѕРІРєР° С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ С‚РµР»Р°
+  /// Подготовка фантомного или результативного тела
   MbSolid       * PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
     uint              & codeError,
     MakeSolidParam    & mksdParam,
     uint                shellThreadId,
     SimpleName          mainId );
-  /// Р“РѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+  /// Годится ли пришедший объект
   bool            IsSuitedObject( const MbCurveEdge &, double );
-  /// РќР°РґРѕ Р»Рё СЃРѕС…СЂР°РЅСЏС‚СЊ РєР°Рє РѕР±СЉРµРєС‚ Р±РµР· РёСЃС‚РѕСЂРёРё
+  /// Надо ли сохранять как объект без истории
   virtual bool            IsNeedSaveAsUnhistored( long version ) const override;
   virtual void            ConvertTo5_11( IfCanConvert & owner, const WritingParms & wrParms ) override;
   virtual void            ConvertToSavePrevious( SaveDocumentVersion saveMode, IfCanConvert & owner, const WritingParms & wrParms ) override;
@@ -678,223 +678,223 @@ public:
   virtual bool            IsNeedConvertTo5_11( SSArray<uint> & types, IfCanConvert & owner ) override;
   virtual bool            IsNeedConvertToSavePrevious( SSArray<uint> & types, SaveDocumentVersion saveMode, IfCanConvert & owner ) override;
 
-  /// Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+  /// Возможно ли для параметра задавать допуск
   virtual bool            IsCanSetTolerance( const VarParameter & varParameter ) const override;
-  /// Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+  /// Для параметра получить неуказанный предельный допуск
   virtual double          GetGeneralTolerance( const VarParameter & varParameter, GeneralToleranceType tType, ItToleranceReader & reader ) const override;
-  /// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+  /// Является ли параметр угловым
   virtual bool            ParameterIsAngular( const VarParameter & varParameter ) const override;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ IfHotPoints
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+  // Реализация IfHotPoints
+  /// Создать хот-точки
   virtual void GetHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool ) override;
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+  /// Пересчитать местоположение хот-точки
   virtual void UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool ) override;
-  /// РќР°С‡Р°Р»Рѕ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РЅР°Р¶Р°С‚Р° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+  /// Начало перетаскивания хот-точки (на хот-точке нажата левая кнопка мыши)
   virtual bool BeginDragHotPoint( HotPointParam & hotPoint ) override;
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
-  // step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+  /// Перерасчет при перетаскивании хот-точки
+  // step - шаг дискретности, для определения смещения с заданным пользователем шагом
   virtual bool ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
     double step, D3Draw & pD3DrawTool ) override;
-  /// Р—Р°РІРµСЂС€РµРЅРёРµ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РѕС‚РїСѓС‰РµРЅР° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+  /// Завершение перетаскивания хот-точки (на хот-точке отпущена левая кнопка мыши)
   virtual bool EndDragHotPoint( HotPointParam & hotPoint, D3Draw & pD3DrawTool ) override;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ С…РѕС‚-С‚РѕС‡РµРє СЂР°РґРёСѓСЃРѕРІ СЃРіРёР±РѕРІ РѕС‚ ShMtStraighten
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+  // Реализация хот-точек радиусов сгибов от ShMtStraighten
+  /// Создать хот-точки (зарезервированы индексы с 5000 до 5999)
   virtual void GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ShMtBendObject &         children ) override; // #84586
-                                                  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+                                                  /// Пересчитать местоположение хот-точек
   virtual void UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     ShMtBendObject &         children ) override;
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+  /// Перерасчет при перетаскивании хот-точки
   virtual bool ChangeChildrenHotPoint( HotPointParam &  hotPoint,
     const MbVector3D &     vector,
     double           step,
     ShMtBendObject & children ) override;
 
-  /// РјРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
+  /// могут ли к объекту быть привязаны управляющие размеры
   virtual bool IsDimensionsAllowed() const override;
   virtual void GetHotPointsForDimensions( RPArray<HotPointParam> & hotPoints,
     IfComponent & editComponent,
     IfComponent & topComponent,
     bool allHotPoints = false ) override;
-  /// Р°СЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
+  /// ассоциировать размеры с переменными родителя
   virtual void AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions ) override;
-  /// СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// создать размеры объекта по хот-точкам
   virtual void CreateDimensionsByHotPoints( IfUniqueName * un,
     SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints ) override;
-  /// РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// обновить геометрию размеров объекта по хот-точкам
   virtual void UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     const PArray<OperationSpecificDispositionVariant>* variants ) override;
 
-  /// РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
+  /// Ассоциировать размеры дочерних объектов - сгибов
   virtual void AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & dimensions,
     ShMtBendObject & children ) override;
-  /// СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// создать размеры объекта по хот-точкам для дочерних объектов
   virtual void CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
     SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject & children ) override;
-  /// РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// обновить геометрию размеров объекта по хот-точкам для дочерних объектов
   virtual void UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject & children ) override;
 
-  /// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+  /// Расчет дуги для пересчета угловых параметров по допуску
   virtual void UpdateMeasurePars( GeneralToleranceType gType, bool recalc ) override;
 
 
-  /// Р—Р°РґР°С‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚
+  /// Задать опорный объект
   virtual void SetRefObject( const WrapSomething * wrapper, size_t index ) override;
 
-  /// РџРѕР»СѓС‡РёС‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚
+  /// Получить опорный объект
   virtual const WrapSomething & GetRefObject( size_t index ) const override;
 
-  /// РџСЂРѕРІРµСЂРёС‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚ (РєР°Рє РІРµСЂС€РёРЅСѓ)
+  /// Проверить опорный объект (как вершину)
   virtual const bool IsObjectSuitableAsBaseVertex( const WrapSomething & pointWrapper ) override;
 
-  /// РџСЂРѕРІРµСЂРёС‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚ (РєР°Рє РїР»РѕСЃРєРѕСЃС‚СЊ)
+  /// Проверить опорный объект (как плоскость)
   virtual const bool IsObjectSuitableAsBasePlane( const WrapSomething & planeWrapper, bool forLeftSide ) override;
 
-  /// РСЃРїСЂР°РІРёС‚СЊ РїР°СЂР°РјРµС‚СЂ РґР»РёРЅС‹ СЃС‚РѕСЂРѕРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+  /// Исправить параметр длины стороны продолжения сгиба
   virtual void FixAbsSideLength( bool isLeftSide ) override;
 
 protected:
   virtual const AbsReferenceContainer * GetRefContainer( const IfComponent & bodyOwner ) const override { return &m_bendObject; }
 
 private:
-  bool IsCanoutAdjoining() const; ///< РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РјС‹РєР°РЅРёРµ СѓРіР»РѕРІ РІРєРѕРЅС†Рµ Рё РІ РЅР°С‡Р°Р»Рµ
+  bool IsCanoutAdjoining() const; ///< Можно ли использовать замыкание углов вконце и в начале
   void DetermineTypeBens() const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ РѕР±СЉРµРєС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїР»РѕСЃРєРѕСЃС‚Рё СЃРіРёР±Р°
+  /// Получить местоположение объекта относительно плоскости сгиба
   MbeItemLocation BendObjectLocation( const WrapSomething & pointWrapper, bool left );
   bool IsNeedInvertDirectionBend();
 
-  /// РџСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕРіРѕ СЂРµР±СЂР° (KOMPAS-17824: РЅРµ РґР°РІР°С‚СЊ РІС‹Р±РёСЂР°С‚СЊ РґРІР° СЂРµР±СЂР° СЃ РѕРґРЅРѕР№ С‚РѕСЂС†РµРІРѕР№ РіСЂР°РЅРё)
+  /// Проверка выбранного ребра (KOMPAS-17824: не давать выбирать два ребра с одной торцевой грани)
   bool VerifyNonOppositeEdge( const WrapSomething & bend, const MbCurveEdge & curveEdge ) const;
 
-  /// РџСЂРѕРІРµСЂРёС‚СЊ, РІС‹Р±СЂР°РЅС‹ Р»Рё РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ РґР»СЏ РЅРµР°Р±СЃРѕР»СЋС‚РЅС‹С… РґР»РёРЅС‹ СЃС‚РѕСЂРѕРЅ СЃРіРёР±Р°
+  /// Проверить, выбраны ли опорные объекты для неабсолютных длины сторон сгиба
   bool IsValidBaseObjects();
-  /// РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
+  /// Обнулить размер радиуса
   void ResetRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions, EDimensionsIds dimensionId );
-  /// РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р°
+  /// Обнулить размер угла
   void ResetAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions );
-  /// РџРѕР»СѓС‡РёС‚СЊ РґР»РёРЅСѓ РІРЅСѓС‚СЂРµРЅРЅРµР№ РґСѓРіРё СЃРіРёР±Р°
+  /// Получить длину внутренней дуги сгиба
   double GetBendInternalLength( const HotPointBendOperUtil & utils ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ СЃРїРµС†РёР°Р»СЊРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ СЂР°СЃС‡РµС‚Р° РїРѕР±РѕС‡РЅС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РѕРїРµСЂР°С†РёРё
+  /// Получить специальный класс для расчета побочных параметров операции
   HotPointBendOperUtil * GetHotPointUtil( MbBendByEdgeValues & params,
     IfComponent        & editComponent,
     ShMtBendObject     * children,
     bool ignoreStraightMode = false );
-  /// РџРѕР»СѓС‡РёС‚СЊ СЃРїРµС†РёР°Р»СЊРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ СЂР°СЃС‡РµС‚Р° РїРѕР±РѕС‡РЅС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РѕРїРµСЂР°С†РёРё
+  /// Получить специальный класс для расчета побочных параметров операции
   HotPointBendOperUtil * GetHotPointUtil( MbBendByEdgeValues & params,
     IfComponent * editComponent,
     ShMtBendObject * children,
     bool ignoreStraightMode = false );
 
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР° СЃРіРёР±Р°
+  /// Обновить размер радиуса сгиба
   void UpdateRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     EDimensionsIds dimensionId,
     bool moveToExternal );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р° СЃРіРёР±Р°
+  /// Обновить размер угла сгиба
   void UpdateAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅС‹ СЃРіРёР±Р°
+  /// Обновить размер длины сгиба
   void UpdateLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅС‹ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Обновить размер длины сгиба слева/справа
   void UpdateSideLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     bool isLeftSide ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЃРјРµС‰РµРЅРёСЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Обновить размер смещения относительно опорного объекта для продолжения сгиба слева/справа
   void UpdateSideObjectOffsetDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     bool isLeftSide ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЃРјРµС‰РµРЅРёРµ СЃРіРёР±Р°
+  /// Обновить размер смещение сгиба
   void UpdateDeepnessDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕС‚СЃС‚СѓРїР° СЃРіРёР±Р°
+  /// Обновить размер отступа сгиба
   void UpdateIndentDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     const ShMtBendHotPoints hotPointId,
     const EDimensionsIds dimensionId,
     double indent ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ С€РёСЂРёРЅС‹ СЃРіРёР±Р°
+  /// Обновить размер ширины сгиба
   void UpdateWidthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°СЃС€РёСЂРµРЅРёСЏ СЃРіРёР±Р°
+  /// Обновить размер расширения сгиба
   void UpdateWideningDimensions( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂС‹ СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+  /// Обновить размеры уклона продолжения сгиба
   void UpdateDeviationDimensions( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints ) const;
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ С€РёСЂРёРЅС‹
+  /// Обновить размер освобождения ширины
   void UpdateWidthReleaseDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ - РіР»СѓР±РёРЅР°
+  /// Обновить размер освобождения - глубина
   void UpdateDepthReleaseDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°РјРµСЂС‹ СѓРіР»Р° СѓРєР»РѕРЅР° СЃС‚РѕСЂРѕРЅ СЃРіРёР±Р°
+  /// Обновить рамеры угла уклона сторон сгиба
   void UpdateSideAngleDimensions( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РїСЂРѕРґРѕР»Р¶РµРЅРёСЋ
+  /// Получить параметры размера длины по продолжению
   bool GetLengthDimensionParametersByContinue( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєРѕРЅС‚РѕСЂСѓ
+  /// Получить параметры размера длины по контору
   bool GetLengthDimensionParametersByContour( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ
+  /// Получить параметры размера длины по касанию
   bool GetLengthDimensionParametersByTouch( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ РїСЂРё СѓРіР»Рµ Р±РѕР»СЊС€Рµ 90
+  /// Получить параметры размера длины по касанию при угле больше 90
   bool GetLengthDimensionObtuseAngle( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ РїСЂРё СѓРіР»Рµ Р±РѕР»СЊС€Рµ 90 РІРЅСѓС‚СЂРё СЃРіРёР±Р°
+  /// Получить параметры размера длины по касанию при угле больше 90 внутри сгиба
   void GetLengthDimensionObtuseAngleInternal( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ РїСЂРё СѓРіР»Рµ Р±РѕР»СЊС€Рµ 90 СЃРЅР°СЂСѓР¶Рё
+  /// Получить параметры размера длины по касанию при угле больше 90 снаружи
   void GetLengthDimensionObtuseAngleNotInternal( const HotPointBendOperUtil & utils,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂС‹ РЈРіРѕР», С‚РёРї РґРѕРїРѕР»РЅСЏСЋС‰РёР№
+  /// Получить параметры размеры Угол, тип дополняющий
   bool GetAngleDimensionSupplementary( const HotPointBendOperUtil & utils,
     MbCartPoint3D & dimensionCenter,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂС‹ РЈРіРѕР», С‚РёРї - СѓРіРѕР» СЃРіРёР±Р°
+  /// Получить параметры размеры Угол, тип - угол сгиба
   bool GetAngleDimensionBend( const HotPointBendOperUtil & utils,
     MbCartPoint3D & dimensionCenter,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ
+  /// Получить параметры размера уклона продолжения
   bool GetDeviationDimensionParameters( const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendHotPoints deviationHotPointId,
@@ -902,19 +902,19 @@ private:
     MbCartPoint3D & dimensionCenter,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ С€РёСЂРёРЅС‹
+  /// Получить параметры размера освобождения ширины
   bool GetWidthReleaseDimensionParameters( const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РіР»СѓР±РёРЅС‹
+  /// Получить параметры размера освобождения глубины
   bool GetDepthReleaseDimensionParameters( const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРіР»Р° СѓРєР»РѕРЅР° СЃС‚РѕСЂРѕРЅС‹ СЃРіРёР±Р°
+  /// Получить параметры размера угла уклона стороны сгиба
   bool GetSideAngleDimensionParameters( const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     double dimensionLength,
@@ -923,7 +923,7 @@ private:
     MbCartPoint3D & dimensionCenter,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃС€РёСЂРµРЅРёСЏ СЃРіРёР±Р°
+  /// Получить параметры размера расширения сгиба
   bool GetWideningDimensionParameters( const HotPointBendOperUtil & utils,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendHotPoints wideningHotPointId,
@@ -931,41 +931,41 @@ private:
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Получить параметры размера продолжения сгиба слева/справа
   bool GetSideLengthDimensionParametersByContinue( const HotPointBendOperUtil & utils,
     MbPlacement3D        & dimensionPlacement,
     MbCartPoint3D        & dimensionPoint1,
     MbCartPoint3D        & dimensionPoint2,
     bool                   isLeftSide ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Получить параметры размера продолжения сгиба слева/справа
   bool GetSideLengthDimensionParametersByContour( const HotPointBendOperUtil & utils,
     MbPlacement3D        & dimensionPlacement,
     MbCartPoint3D        & dimensionPoint1,
     MbCartPoint3D        & dimensionPoint2,
     bool                   isInternal,
     bool                   isLeftSide ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Получить параметры размера продолжения сгиба слева/справа
   bool GetSideLengthDimensionParametersByTouch( const HotPointBendOperUtil & utils,
     MbPlacement3D        & dimensionPlacement,
     MbCartPoint3D        & dimensionPoint1,
     MbCartPoint3D        & dimensionPoint2,
     bool                   isInternal,
     bool                   isLeftSide ) const;
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЃРјРµС‰РµРЅРёСЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+  /// Получить параметры размера смещения относительно опорного объекта для продолжения сгиба слева/справа
   bool GetSideObjectOffsetDimensionParameters( const HotPointBendOperUtil & utils,
     MbPlacement3D        & dimensionPlacement,
     MbCartPoint3D        & dimensionPoint1,
     MbCartPoint3D        & dimensionPoint2,
     bool                   isLeftSide ) const;
-  /// РџРѕСЃС‡РёС‚Р°С‚СЊ РґР»РёРЅСѓ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° РґРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р°
+  /// Посчитать длину продолжения сгиба до опорного объекта
   const bool CalculateSideLengthToObject( HotPointBendOperUtil & utils,
     bool                   isLeftSide,
     double               & length );
-  /// РџРѕР»СѓС‡РёС‚СЊ РєР°СЃР°С‚РµР»СЊРЅСѓСЋ Рє РґСѓРіРµ РІ С‚РѕС‡РєРµ
+  /// Получить касательную к дуге в точке
   void GetArcTangent( const MbArc3D       & supportArc,
     const MbCartPoint3D & pointOnArc,
     MbLine3D      & tangent ) const;
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РґР»РёРЅСѓ СЃРіРёР±Р°, РµСЃР»Рё РјС‹ СЃС‚СЂРѕРёРј РґРѕ РІРµСЂС€РёРЅС‹/РґРѕ РїР»РѕСЃРєРѕСЃС‚Рё
+  /// Пересчитать длину сгиба, если мы строим до вершины/до плоскости
   bool UpdateSideLengthsForNonAbsoluteCalcMode( MbBendByEdgeValues & params );
 
   bool GetIndentDimensionParameters( const HotPointBendOperUtil & utils, MbCartPoint3D * indentHotPointPosition, double indent,
@@ -984,7 +984,7 @@ private:
     MbCartPoint3D & dimensionPoint1, MbCartPoint3D & dimensionPoint2, MbPlacement3D & dimensionPlacement ) const;
 
 private:
-  void operator = ( const ShMtBend & ); // РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ
+  void operator = ( const ShMtBend & ); // не реализовано
 
   DECLARE_PERSISTENT_CLASS( ShMtBend )
 };
@@ -992,8 +992,8 @@ private:
 
 //--------------------------------------------------------------------------------
 /**
-РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РЅРёС‡РµРіРѕ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°СЏ, СЌСЃРєРёР· РґР°РґРёРј РїРѕС‚РѕРј.
-РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°.
+Конструктор, просто запоминает параметры ничего не рассчитывая, эскиз дадим потом.
+Конструктор для использования в конструкторе процесса.
 \param _pars
 \param un
 \return
@@ -1013,7 +1013,7 @@ ShMtBend::ShMtBend( const ShMtBendParameters & _pars, IfUniqueName * un )
 
 //--------------------------------------------------------------------------------
 /**
-РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
+Конструктор копирования
 \param other
 \return
 */
@@ -1029,7 +1029,7 @@ ShMtBend::ShMtBend( const ShMtBend & other )
 
 //--------------------------------------------------------------------------------
 /**
-РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+Конструктор
 \param
 \return
 */
@@ -1049,7 +1049,7 @@ I_IMP_SOMETHING_FUNCS_AR( ShMtBend )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РµРЅРёРµ РёРЅС‚РµСЂС„РµР№СЃР°
+Получение интерфейса
 */
 //---
 I_IMP_QUERY_INTERFACE( ShMtBend )
@@ -1062,7 +1062,7 @@ I_IMP_END_QI_FROM_BASE2( ShMtBaseBend, RefContainersOwner )
 
 //--------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°С‚СЊ РєРѕРїРёСЋ РѕР±СЉРµРєС‚Р° - РєРѕРїРёСЋ СѓСЃР»РѕРІРЅРѕРіРѕ РёР·РѕР±СЂР°Р¶РЅРЅРёСЏ СЂРµР·СЊР±С‹
+Создать копию объекта - копию условного изображнния резьбы
 \param compOwner
 \return IfPartObjectCopy *
 */
@@ -1075,7 +1075,7 @@ IfPartObjectCopy * ShMtBend::CreateObjectCopy( IfComponent & compOwner ) const
 
 //--------------------------------------------------------------------------------
 /**
-РЎР»РµРґСѓРµС‚ РєРѕРїРёСЂРѕРІР°С‚СЊ РЅР° СѓРєР°Р·Р°РЅРЅРѕРј РєРѕРјРїРѕРЅРµРЅС‚Рµ
+Следует копировать на указанном компоненте
 \param component
 \return bool
 */
@@ -1088,9 +1088,9 @@ bool ShMtBend::NeedCopyOnComp( const IfComponent & component ) const
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РєРѕРїРёСЂРѕРІР°С‚СЊ СЌС‚Сѓ РѕРїРµСЂР°С†РёСЋ РєР°Рє-РЅРёР±СѓРґСЊ РёРЅР°С‡Рµ, РєСЂРѕРјРµ РєР°Рє РіРµРѕРјРµС‚СЂРёС‡РµСЃРєРё?
-Рў.Рµ. С‡РµСЂРµР· MakePureSolid РёР»Рё С‡РµСЂРµР· РёРЅС‚РµСЂС„РµР№СЃС‹ IfCopibleOperationOnPlaces,
-IfCopibleOperationOnEdges Рё С‚.Рґ.
+Можно ли копировать эту операцию как-нибудь иначе, кроме как геометрически?
+Т.е. через MakePureSolid или через интерфейсы IfCopibleOperationOnPlaces,
+IfCopibleOperationOnEdges и т.д.
 \return bool
 */
 //---
@@ -1102,7 +1102,7 @@ bool ShMtBend::CanCopyNonGeometrically() const
 
 //--------------------------------------------------------------------------------
 /**
-Р’С‹РґР°С‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹, РѕР±СЂР°Р·С‹ РєРѕС‚РѕСЂС‹С… РЅСѓР¶РЅРѕ РЅР°Р№С‚Рё РЅР° РЅРµРєРѕС‚РѕСЂРѕРј СЂР°СЃСЃС‚РѕСЏРЅРёРё
+Выдать ссылки на объекты, образы которых нужно найти на некотором расстоянии
 \param comp
 \return const AbsReferenceContainer *
 */
@@ -1115,7 +1115,7 @@ const AbsReferenceContainer * ShMtBend::GetReferencesToFind( const IfComponent &
 
 //--------------------------------------------------------------------------------
 /**
-Р’РѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+Восстановить связи
 \param result
 \param allRefs
 \param withMath
@@ -1128,7 +1128,7 @@ bool ShMtBend::RestoreReferences( PartRebuildResult & result, bool allRefs, CERs
 
   if ( IsJustRead() && GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0B000001L )
   {
-    // РґР»СЏ РІРµСЂСЃРёР№ СЃС‚Р°СЂС€Рµ 11 РЅР°РґРѕ РїСЂРѕСЃС‚Р°РІРёС‚СЊ РёРґ РЅРёС‚РєРё РІ РїРѕРґСЃРіРёР±С‹
+    // для версий старше 11 надо проставить ид нитки в подсгибы
     IFPTR( Primitive ) prim( m_bendObject.GetObjectTrans( 0 ).obj );
     if ( prim )
       for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
@@ -1145,7 +1145,7 @@ bool ShMtBend::RestoreReferences( PartRebuildResult & result, bool allRefs, CERs
 
 //--------------------------------------------------------------------------------
 /**
-РћС‡РёСЃС‚РёС‚СЊ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ soft = true - С‚РѕР»СЊРєРѕ РІСЂР°РїРµСЂС‹ (РЅРµ С‚СЂРѕРіР°СЏ РёРјРµРЅР°)
+Очистить опорные объекты soft = true - только враперы (не трогая имена)
 \param soft
 \return void
 */
@@ -1159,7 +1159,7 @@ void ShMtBend::ClearReferencedObjects( bool soft )
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
+Заменить ссылки на объекты
 \param changedRefs
 \return bool
 */
@@ -1174,7 +1174,7 @@ bool ShMtBend::ChangeReferences( ChangeReferencesData & changedRefs )
 
 //--------------------------------------------------------------------------------
 /**
-РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„Р°РЅС‚РѕРјР°
+Инициализация фантома
 \param operOwner
 \param setNames
 \return bool
@@ -1182,13 +1182,13 @@ bool ShMtBend::ChangeReferences( ChangeReferencesData & changedRefs )
 //---
 bool ShMtBend::InitPhantom( const IfComponent &operOwner, bool setNames )
 {
-  return InitPhantomPrevSolid( operOwner, tct_Created | tct_Merged | tct_Truncated/*changed*/, true /*false*/, true );  // KVT Р’СЃРµ С„Р°РЅС‚РѕРјС‹ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РїСЂРѕРёРјРµРЅРѕРІР°РЅС‹
+  return InitPhantomPrevSolid( operOwner, tct_Created | tct_Merged | tct_Truncated/*changed*/, true /*false*/, true );  // KVT Все фантомы должны быть проименованы
 }
 
 
 //--------------------------------------------------------------------------------
 /**
-Р”Р°С‚СЊ РІРЅСѓС‚СЂРµРЅРЅРёРµ СЃСЃС‹Р»РєРё, РєРѕС‚РѕСЂС‹Рµ РїСЂРё РєРѕРїРёСЂРѕРІР°РЅРёРё РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ Р·Р°РјРµРЅРµРЅС‹ РЅР° РЅРѕРІС‹Рµ
+Дать внутренние ссылки, которые при копировании должны быть заменены на новые
 \param internalRefs
 \return bool
 */
@@ -1201,7 +1201,7 @@ bool ShMtBend::GetInternalReferences( AbsReferenceContainer & internalRefs )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕСЃС‚СЂРѕРёС‚СЊ РѕРїРµСЂР°С†РёСЋ РґР»СЏ РЅР°Р№РґРµРЅРЅС‹С… СЂРµР±РµСЂ.
+Построить операцию для найденных ребер.
 \param mksdParam
 \param copyPlace
 \param foundEdges
@@ -1223,27 +1223,27 @@ uint ShMtBend::MakeSolidOnEdges( MakeSolidParam        & mksdParam,
   PArray<MbPositionData> * posData )
 {
   uint res = rt_Success;
-  MbSolid * result = nullptr; // Р РµР·СѓР»СЊС‚Р°С‚
+  MbSolid * result = nullptr; // Результат
 
   std::vector<MbCurveEdge*> edges;
   for ( size_t i = 0, count = m_bendObject.Count(); i < count; ++i )
   {
     IfSomething * obj = m_bendObject.GetObjectTrans( i ).obj;
     IFPTR( PartEdge ) partEdge( obj );
-    // Р•СЃС‚СЊ СЂРµР±СЂРѕ, Р° С‚Р°Рє Р¶Рµ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹, РµСЃР»Рё СЃРіРёР± СЃС‚СЂРѕРёС‚СЃСЏ РґРѕ РІРµСЂС€РёРЅС‹ РёР»Рё РїР»РѕСЃРєРѕСЃС‚Рё
+    // Есть ребро, а так же опорные объекты, если сгиб строится до вершины или плоскости
     if ( !!partEdge && IsValidBaseObjects() )
       if ( MbCurveEdge * curveEdge = partEdge->GetMathEdge() )
         edges.push_back( curveEdge );
   }
 
 
-  // РЎРґРµР»Р°С‚СЊ СЃРіРёР± РЅР° РЅР°Р№РґРµРЅРЅРѕРј СЂРµР±СЂРµ
+  // Сделать сгиб на найденном ребре
   if ( edges.size() )
   {
     result = PrepareLocalSolid( edges, res, mksdParam, -1, mainId );
   }
   else
-    res = rt_NoEdges; // РѕС€РёР±РєР°
+    res = rt_NoEdges; // ошибка
 
 
   if ( result )
@@ -1253,14 +1253,14 @@ uint ShMtBend::MakeSolidOnEdges( MakeSolidParam        & mksdParam,
 }
 
 
-uint ShMtBend::GetObjType()  const { return ot_ShMtBend; } // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-uint ShMtBend::GetObjClass() const { return oc_ShMtBend; } // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
-uint ShMtBend::OperationSubType() const { return bo_Union; } // РІРµСЂРЅСѓС‚СЊ РїРѕРґС‚РёРї РѕРїРµСЂР°С†РёРё
+uint ShMtBend::GetObjType()  const { return ot_ShMtBend; } // вернуть тип объекта
+uint ShMtBend::GetObjClass() const { return oc_ShMtBend; } // вернуть общий тип объекта
+uint ShMtBend::OperationSubType() const { return bo_Union; } // вернуть подтип операции
 
 
                                                              //--------------------------------------------------------------------------------
                                                              /**
-                                                             РЎРєРѕРїРёСЂРѕРІР°С‚СЊ РѕР±СЉРµРєС‚
+                                                             Скопировать объект
                                                              \return PrObject &
                                                              */
                                                              //---
@@ -1272,7 +1272,7 @@ PrObject & ShMtBend::Duplicate() const
 
 //--------------------------------------------------------------------------------
 /**
-РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ РґСЂСѓРіРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+Установить параметры по другому объекту
 \param other
 \return void
 */
@@ -1294,7 +1294,7 @@ void ShMtBend::Assign( const PrObject &other )
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РґР°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+Задать параметры
 \param p
 \return void
 */
@@ -1307,7 +1307,7 @@ void ShMtBend::SetParameters( const ShMtBaseBendParameters & p )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+Получить параметры
 \return ShMtBaseBendParameters &
 */
 //---
@@ -1319,7 +1319,7 @@ ShMtBaseBendParameters & ShMtBend::GetParameters() const
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РґР°С‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+Задать кривую сгиба
 \param wrapper
 \return void
 */
@@ -1342,7 +1342,7 @@ void ShMtBend::SetBendObject( const WrapSomething * wrapper )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+Получить кривую сгиба
 \return const WrapSomething &
 */
 //---
@@ -1358,7 +1358,7 @@ const WrapSomething & ShMtBend::GetBendObject() const
 #ifdef MANY_THICKNESS_BODY_SHMT
 //--------------------------------------------------------------------------------
 /**
-Р“РѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+Годится ли пришедший объект
 \param wrapper
 \return bool
 */
@@ -1367,7 +1367,7 @@ bool ShMtBend::IsSuitedObject( const WrapSomething & wrapper )
 {
   bool res = false;
 
-  // РЁРђ K11 17.12.2008 РћС€РёР±РєР° в„–37142: Р—Р°РїСЂРµС‰Р°РµРј РІС‹Р±РѕСЂ СЂРµР±РµСЂ РјРЅРѕРіРѕС‡Р°СЃС‚РЅС‹С… С‚РµР»
+  // ША K11 17.12.2008 Ошибка №37142: Запрещаем выбор ребер многочастных тел
   if ( wrapper && wrapper.component == wrapper.editComponent &&
     !::IsMultiShellBody( wrapper ) )
   {
@@ -1420,7 +1420,7 @@ bool ShMtBend::IsSuitedObject( const WrapSomething & wrapper )
 #else
 //--------------------------------------------------------------------------------
 /**
-Р“РѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+Годится ли пришедший объект
 \param wrapper
 \param thickness
 \return bool
@@ -1430,7 +1430,7 @@ bool ShMtBend::IsSuitedObject( const WrapSomething & wrapper, double thickness )
 {
   bool res = false;
 
-  // РЁРђ K11 17.12.2008 РћС€РёР±РєР° в„–37142: Р—Р°РїСЂРµС‰СЏРµРј РІС‹Р±РѕСЂ СЂРµР±РµСЂ РјРЅРѕРіРѕС‡Р°СЃС‚РЅС‹С… С‚РµР»
+  // ША K11 17.12.2008 Ошибка №37142: Запрещяем выбор ребер многочастных тел
   if ( !::IsMultiShellBody( wrapper ) && wrapper.obj )
   {
     IFPTR( PartEdge ) pEdge( wrapper.obj );
@@ -1463,7 +1463,7 @@ bool ShMtBend::IsSuitedObject( const WrapSomething & wrapper, double thickness )
 
 //--------------------------------------------------------------------------------
 /**
-РџСЂРѕРІРµСЂРєР° РІС‹Р±СЂР°РЅРЅРѕРіРѕ СЂРµР±СЂР° (KOMPAS-17824: РЅРµ РґР°РІР°С‚СЊ РІС‹Р±РёСЂР°С‚СЊ РґРІР° СЂРµР±СЂР° СЃ РѕРґРЅРѕР№ С‚РѕСЂС†РµРІРѕР№ РіСЂР°РЅРё)
+Проверка выбранного ребра (KOMPAS-17824: не давать выбирать два ребра с одной торцевой грани)
 \param bend
 \param curveEdge
 \return bool
@@ -1488,9 +1488,9 @@ bool ShMtBend::VerifyNonOppositeEdge( const WrapSomething & bend, const MbCurveE
     oldCurveEdge = oldEdge->GetMathEdge();
 
     oldFacePlus = oldCurveEdge->GetFacePlus();
-    oldFaceMinus = oldCurveEdge->GetFaceMinus();  // KOMPAS-17824: РЅРµ РґРѕРїСѓСЃС‚РёРј РІС‹Р±РѕСЂ СЂРµР±СЂР°,
-    oldSheetFace = FindSheetFace( *oldCurveEdge );// РёРјРµСЋС‰РµРіРѕ РѕР±С‰СѓСЋ РіСЂР°РЅСЊ СЃ РєР°РєРёРј-Р»РёР±Рѕ СЂР°РЅРµРµ РІС‹Р±СЂР°РЅРЅС‹Рј СЂРµР±СЂРѕРј
-                                                  // Рё Р»РµР¶Р°С‰РµРіРѕ РЅР° РїСЂРѕС‚РёРІРѕРїРѕР»РѕР¶РЅРѕР№ РѕС‚ РЅРµРіРѕ РіСЂР°РЅРё Р»РёСЃС‚РѕРІРѕРіРѕ С‚РµР»Р°
+    oldFaceMinus = oldCurveEdge->GetFaceMinus();  // KOMPAS-17824: не допустим выбор ребра,
+    oldSheetFace = FindSheetFace( *oldCurveEdge );// имеющего общую грань с каким-либо ранее выбранным ребром
+                                                  // и лежащего на противоположной от него грани листового тела
     res = !(oldFacePlus && oldFaceMinus && oldSheetFace && newOppositeFace && newFacePlus && newFaceMinus
       && (newFacePlus == oldFacePlus || newFacePlus == oldFaceMinus || newFaceMinus == oldFacePlus || newFaceMinus == oldFaceMinus)
       && (oldSheetFace == newOppositeFace));
@@ -1502,19 +1502,19 @@ bool ShMtBend::VerifyNonOppositeEdge( const WrapSomething & bend, const MbCurveE
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \return double
 */
 //---
 double ShMtBend::GetThickness() const
 {
-  return m_params.m_thickness;    // С‚РѕР»С‰РёРЅР°
+  return m_params.m_thickness;    // толщина
 }
 
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \param h
 \return void
 */
@@ -1522,26 +1522,26 @@ TODO: РћРїРёСЃР°РЅРёРµ
 void ShMtBend::SetThickness( double h )
 {
   m_params.m_thickness.ForgetVariable();
-  m_params.m_thickness = h;    // С‚РѕР»С‰РёРЅР°
+  m_params.m_thickness = h;    // толщина
 }
 
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \return double
 */
 //---
 double ShMtBend::GetOwnerAbsRadius() const
 {
   //  return m_params.GetRadius();
-  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // внутренний радиус сгиба
 }
 
 
 //--------------------------------------------------------------------------------
 /**
-РљРѕСЌС„С„РёС†РёРµРЅС‚, РѕРїСЂРµРґРµР»СЏСЋС‰РёР№ РїРѕР»РѕР¶РµРЅРёРµ РЅРµР№С‚СЂР°Р»СЊРЅРѕРіРѕ СЃР»РѕСЏ
+Коэффициент, определяющий положение нейтрального слоя
 \return double
 */
 //---
@@ -1555,7 +1555,7 @@ double ShMtBend::GetOwnerValueBend() const
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \return double
 */
 //---
@@ -1567,7 +1567,7 @@ double ShMtBend::GetOwnerAbsAngle() const
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ
+По внутреннему радиусу
 \return bool
 */
 //---
@@ -1578,7 +1578,7 @@ bool ShMtBend::IsOwnerInternalRad() const {
 
 //--------------------------------------------------------------------------------
 /**
-Р”Р°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+Дать тип развертки
 \return UnfoldType
 */
 //---
@@ -1589,7 +1589,7 @@ UnfoldType ShMtBend::GetOwnerTypeUnfold() const {
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+Задать тип развертки
 \param t
 \return void
 */
@@ -1602,7 +1602,7 @@ void ShMtBend::SetOwnerTypeUnfold( UnfoldType t )
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \param val
 \return void
 */
@@ -1615,7 +1615,7 @@ void ShMtBend::SetOwnerFlagByBase( bool val )
 
 //--------------------------------------------------------------------------------
 /**
-TODO: РћРїРёСЃР°РЅРёРµ
+TODO: Описание
 \return bool
 */
 //---
@@ -1627,7 +1627,7 @@ bool ShMtBend::GetOwnerFlagByBase() const
 
 //--------------------------------------------------------------------------------
 /**
-Р•СЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
+Если изменились какие либо параметры, и есть чтение коэф из базы, то прочитать базу
 \param trans
 \return bool
 */
@@ -1640,7 +1640,7 @@ bool ShMtBend::IfOwnerBaseChanged( IfComponent * trans )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РєРѕСЌС„С„РёС†РёРµРЅС‚
+Получить коэффициент
 \return double
 */
 //---
@@ -1652,7 +1652,7 @@ double ShMtBend::GetOwnerCoefficient() const
 
 //--------------------------------------------------------------------------------
 /**
-РћРїСЂРµРґРµР»РёС‚СЊ РІСЃРµ РґРѕСЃС‚СѓРїРЅС‹Рµ С‚РёРїС‹ Р·Р°РјС‹РєР°РЅРёСЏ СѓРіР»РѕРІ.
+Определить все доступные типы замыкания углов.
 */
 //---
 void ShMtBend::DetermineTypeBens() const
@@ -1679,7 +1679,7 @@ void ShMtBend::DetermineTypeBens() const
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РјРєРЅСѓС‚С‹Р№ Р»Рё РїСѓС‚СЊ.
+Замкнутый ли путь.
 */
 //---
 bool ShMtBend::IsClosedPath() const
@@ -1690,7 +1690,7 @@ bool ShMtBend::IsClosedPath() const
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РјС‹РєР°РЅРёРµ СЃРјРµР¶РЅС‹С… СѓРіР»РѕРІ.
+Можно ли использовать замыкание смежных углов.
 */
 //---
 bool ShMtBend::IsCanoutAdjoiningBetween() const
@@ -1701,7 +1701,7 @@ bool ShMtBend::IsCanoutAdjoiningBetween() const
 
 //------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РјС‹РєР°РЅРёРµ СѓРіР»РѕРІ РІРєРѕРЅС†Рµ Рё РІ РЅР°С‡Р°Р»Рµ.
+Можно ли использовать замыкание углов вконце и в начале.
 */
 //---
 bool ShMtBend::IsCanoutAdjoining() const
@@ -1712,7 +1712,7 @@ bool ShMtBend::IsCanoutAdjoining() const
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РјС‹РєР°РЅРёРµ СѓРіР»РѕРІ РІРЅР°С‡Р°Р»Рµ.
+Можно ли использовать замыкание углов вначале.
 */
 //---
 bool ShMtBend::IsCanoutAdjoiningBegin()
@@ -1723,7 +1723,7 @@ bool ShMtBend::IsCanoutAdjoiningBegin()
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ Р·Р°РјС‹РєР°РЅРёРµ СѓРіР»РѕРІ РІРєРѕРЅС†Рµ.
+Можно ли использовать замыкание углов вконце.
 */
 //---
 bool ShMtBend::IsCanoutAdjoiningEnd()
@@ -1734,7 +1734,7 @@ bool ShMtBend::IsCanoutAdjoiningEnd()
 
 //--------------------------------------------------------------------------------
 /**
-РџРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+Перед тем как заканчиваем редактирование
 \param iniObj
 \param editComp
 \return void
@@ -1754,7 +1754,7 @@ IMP_PROC_REGISTRATION( ShMtBend );
 
 //--------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°РЅРёРµ С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ С‚РµР»Р°
+Создание фантомного или результативного тела
 \param codeError
 \param mksdParam
 \param shellThreadId
@@ -1779,7 +1779,7 @@ MbSolid * ShMtBend::MakeSolid( uint              & codeError,
     {
       IfSomething * obj = m_bendObject.GetObjectTrans( i ).obj;
       IFPTR( PartEdge ) partEdge( obj );
-      // Р•СЃС‚СЊ СЂРµР±СЂРѕ, Р° С‚Р°Рє Р¶Рµ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹, РµСЃР»Рё СЃРіРёР± СЃС‚СЂРѕРёС‚СЃСЏ РґРѕ РІРµСЂС€РёРЅС‹ РёР»Рё РїР»РѕСЃРєРѕСЃС‚Рё
+      // Есть ребро, а так же опорные объекты, если сгиб строится до вершины или плоскости
       if ( !!partEdge && IsValidBaseObjects() )
         if ( MbCurveEdge * curveEdge = partEdge->GetMathEdge() )
           edges.push_back( curveEdge );
@@ -1812,7 +1812,7 @@ MbSolid * ShMtBend::MakeSolid( uint              & codeError,
   //     {
   //       IfSomething * obj = m_bendObject.GetObjectTrans(i).obj;
   //       IFPTR( PartEdge ) partEdge ( obj );
-  //       // Р•СЃС‚СЊ СЂРµР±СЂРѕ, Р° С‚Р°Рє Р¶Рµ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹, РµСЃР»Рё СЃРіРёР± СЃС‚СЂРѕРёС‚СЃСЏ РґРѕ РІРµСЂС€РёРЅС‹ РёР»Рё РїР»РѕСЃРєРѕСЃС‚Рё
+  //       // Есть ребро, а так же опорные объекты, если сгиб строится до вершины или плоскости
   //       if ( !!partEdge && IsValidBaseObjects() )
   //       {
   //         MbCurveEdge * curveEdge = partEdge->GetMathEdge();
@@ -1838,8 +1838,8 @@ MbSolid * ShMtBend::MakeSolid( uint              & codeError,
 
 //------------------------------------------------------------------------------
 /**
-Р”РѕР±Р°РІР»РµРЅРёРµ(СѓРґР°Р»РµРЅРёРµ РµСЃР»Рё С‚Р°РєРѕР№ СѓР¶Рµ РµСЃС‚СЊ) СЂРµР±СЂР° РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ СЃРіРёР±Р°.
-\return bool РґРѕР±Р°РІРёР»СЃСЏ РёР»Рё СѓРґР°Р»РёР»СЃСЏ.
+Добавление(удаление если такой уже есть) ребра для построения сгиба.
+\return bool добавился или удалился.
 */
 //---
 bool ShMtBend::AddBendObject( const WrapSomething & bend )
@@ -1858,8 +1858,8 @@ bool ShMtBend::AddBendObject( const WrapSomething & bend )
 
 //------------------------------------------------------------------------------
 /**
-РЈРґР°Р»РµРЅРёРµ СЂРµР±СЂР° РїРѕ РёРЅРґРµРєСЃСѓ.
-\return bool СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ РёР»Рё С‚Р°РєРѕРіРѕ РёРЅРґРµРєСЃР° РЅРµС‚.
+Удаление ребра по индексу.
+\return bool удалось удалить или такого индекса нет.
 */
 //---
 bool ShMtBend::RemoveBendObject( size_t index )
@@ -1879,7 +1879,7 @@ bool ShMtBend::RemoveBendObject( size_t index )
 
 //------------------------------------------------------------------------------
 /**
-РћС‡РёСЃС‚РёС‚СЊ РІСЃРµ СЂРµР±СЂР° СЃРіРёР±РІ.
+Очистить все ребра сгибв.
 */
 //---
 void ShMtBend::FlushBendObject()
@@ -1890,7 +1890,7 @@ void ShMtBend::FlushBendObject()
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ СЂРµР±СЂРѕ РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ СЃРіРёР±Р° РїРѕ РёРЅРґРµРєСЃСѓ
+Получить ребро для построения сгиба по индексу
 */
 //---
 WrapSomething ShMtBend::GetBend( size_t i ) const
@@ -1901,8 +1901,8 @@ WrapSomething ShMtBend::GetBend( size_t i ) const
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РєРѕР»РёС‡РµСЃС‚РІРѕ СЂРµР±РµСЂ РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ СЃРіРёР±Р°.
-\return size_t РєРѕР»РёС‡РµСЃС‚РІРѕ СЂРµР±РµСЂ СѓС‡Р°СЃС‚РІСѓСЋС‰РёС… РІ РїРѕСЃС‚СЂРѕРµРЅРёРё СЃРіРёР±Р°.
+Получить количество ребер для построения сгиба.
+\return size_t количество ребер участвующих в построении сгиба.
 */
 //---
 size_t ShMtBend::GetBendCount() const
@@ -1913,7 +1913,7 @@ size_t ShMtBend::GetBendCount() const
 
 //------------------------------------------------------------------------------
 /**
-РџРѕСЃС‚СЂРѕРµРЅ Р»Рё СЃРіРёР± РїРѕ РЅРµСЃРєРѕР»СЊРєРёРј СЂРµР±СЂР°Рј.
+Построен ли сгиб по нескольким ребрам.
 */
 //---
 bool ShMtBend::IsMultiBend() const
@@ -1924,7 +1924,7 @@ bool ShMtBend::IsMultiBend() const
 
 //--------------------------------------------------------------------------------
 /**
-РџСЂРѕРІРµСЂРєР° С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё РѕРїРµСЂР°С†РёРё
+Проверка целостности операции
 \return bool
 */
 //---
@@ -1936,7 +1936,7 @@ bool ShMtBend::IsValid() const
 
 //--------------------------------------------------------------------------------
 /**
-РќР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+Набирает массив предупреждений из ресурса
 \param warnings
 \return void
 */
@@ -1947,7 +1947,7 @@ void ShMtBend::WhatsWrong( WarningsArray & warnings )
 
   if ( !m_bendObject.IsFull() )
   {
-    warnings.AddWarning( IDP_WARNING_LOSE_SUPPORT_OBJ, module ); // "РџРѕС‚РµСЂСЏРЅ РѕРґРёРЅ РёР»Рё РЅРµСЃРєРѕР»СЊРєРѕ РѕРїРѕСЂРЅС‹С… РѕР±СЉРµРєС‚РѕРІ"
+    warnings.AddWarning( IDP_WARNING_LOSE_SUPPORT_OBJ, module ); // "Потерян один или несколько опорных объектов"
   }
 
   IFPTR( PartEdge ) partEdge( GetBendObject().obj );
@@ -1965,7 +1965,7 @@ void ShMtBend::WhatsWrong( WarningsArray & warnings )
   if ( !IsValidBaseObjects() )
     warnings.AddWarning( IDP_WARNING_LOSE_SUPPORT_OBJ, module );
 
-  // РџСЂРѕРІРµСЂРєР° РЅР° РєРѕСЂСЂРµРєС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РїР°СЂР°РјРµС‚СЂР° РґР»РёРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° (РґР»СЏ Р·Р°РґР°РЅРёСЏ РїРѕ РІРµСЂС€РёРЅРµ Рё С‡РµСЂРµР· РІСЃРµ)
+  // Проверка на корректное значение параметра длины продолжения сгиба (для задания по вершине и через все)
   if ( (m_params.m_sideLeft.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute &&
     m_params.m_sideLeft.m_length.GetVarValue() < 0) ||
     (m_params.m_bendLengthBy2Sides && m_params.m_sideRight.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute &&
@@ -1978,7 +1978,7 @@ void ShMtBend::WhatsWrong( WarningsArray & warnings )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ РєРѕ РІСЃС‚СЂР°РёРІР°РЅРёСЋ РІ РјРѕРґРµР»СЊ
+Подготовиться ко встраиванию в модель
 \param result
 \param toObj
 \return bool
@@ -1988,7 +1988,7 @@ bool ShMtBend::PrepareToAdding( PartRebuildResult & result, PartObject * toObj )
 {
   if ( ShMtBaseBend::PrepareToAdding( result, toObj ) )
   {
-    if ( !GetFlagValue( O3D_IsReading ) ) // РЅРµ РїСЂРѕС‡РёС‚Р°РЅ РёР· РїР°РјСЏС‚Рё, Р° СЃРѕР·РґР°РЅ РєР°Рє new  BUG 68896
+    if ( !GetFlagValue( O3D_IsReading ) ) // не прочитан из памяти, а создан как new  BUG 68896
     {
       m_params.PrepareToAdding( result, this );
       UpdateMeasurePars( gtt_none, true );
@@ -2002,7 +2002,7 @@ bool ShMtBend::PrepareToAdding( PartRebuildResult & result, PartObject * toObj )
 
 //--------------------------------------------------------------------------------
 /**
-Р’С‹РґР°С‚СЊ РјР°СЃСЃРёРІ РїР°СЂР°РјРµС‚СЂРѕРІ, СЃРІСЏР·Р°РЅРЅС‹С… СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё
+Выдать массив параметров, связанных с переменными
 \param parVars
 \param parCollType
 \return void
@@ -2021,7 +2021,7 @@ void ShMtBend::GetVariableParameters( VarParArray & parVars, ParCollType parColl
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°Р±С‹С‚СЊ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ, СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
+Забыть все переменные, связанные с параметрами
 \return void
 */
 //---
@@ -2034,7 +2034,7 @@ void ShMtBend::ForgetVariables()
 
 //--------------------------------------------------------------------------------
 /**
-РР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+Изменить уникальное имя параметра
 \param un
 \return void
 */
@@ -2048,12 +2048,12 @@ void ShMtBend::RenameUnique( IfUniqueName & un )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
+Подготовиться к построению
 \param operOwner
 \return void
 */
 //---
-void ShMtBend::PrepareToBuild( const IfComponent & operOwner ) // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
+void ShMtBend::PrepareToBuild( const IfComponent & operOwner ) // компонент - владелец этой операции
 {
   creatorBends = new CreatorForBendUnfoldParams( *this, (IfComponent*)&operOwner );
 }
@@ -2061,7 +2061,7 @@ void ShMtBend::PrepareToBuild( const IfComponent & operOwner ) // РєРѕРјРїРѕРЅРµ
 
 //--------------------------------------------------------------------------------
 /**
-Р”РµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРµСЂРµСЃС‚СЂРѕРµРЅРёСЏ
+Действия после перестроения
 \return void
 */
 //---
@@ -2074,7 +2074,7 @@ void ShMtBend::PostBuild()
 
 //--------------------------------------------------------------------------------
 /**
-РЎРєРѕРїРёСЂРѕРІР°С‚СЊ СЃРІРѕР№СЃС‚РІР° РѕР±СЉРµРєС‚Р°
+Скопировать свойства объекта
 \param source
 \return void
 */
@@ -2098,7 +2098,7 @@ bool ShMtBend::CopyInnerProps( const IfPartObject& source,
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕРґРіРѕС‚РѕРІРєР° С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ С‚РµР»Р°
+Подготовка фантомного или результативного тела
 \param curveEdge
 \param codeError
 \param mksdParam
@@ -2133,11 +2133,11 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
       MbBendByEdgeValues params;
       SetThickness( thickness );
 
-      m_params.ReadBaseIfChanged( const_cast<IfComponent*>(mksdParam.m_operOwner) ); // РµСЃР»Рё РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РІРµСЂС‚РєРё Р±СЂР°С‚СЊ РёР· Р±Р°Р·С‹, С‚Рѕ РїРµСЂРµС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ, РµСЃР»Рё РЅР°РґРѕ
+      m_params.ReadBaseIfChanged( const_cast<IfComponent*>(mksdParam.m_operOwner) ); // если параметры развертки брать из базы, то перечитать базу, если надо
       m_params.GetValues( params, edges[0]->GetMetricLength(), GetObjVersion(), edges.size() > 1 ? ShMtBendParameters::bd_allLength : m_params.m_bendDisposal );
-      // Р’ СЃС‚Р°СЂС‹С… РІРµСЂСЃРёСЏС… РЅРµРїСЂР°РІРёР»СЊРЅРѕ СЂР°СЃСЃС‡РёС‚С‹РІР°Р»РѕСЃСЊ СЃРјРµС‰РµРЅРёРµ
+      // В старых версиях неправильно рассчитывалось смещение
       if ( GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0800000BL )
-        // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+        // Смещение посчитать после всех вычислений
         m_params.CalcAfterValues( params );
 
       SArray<uint> errors;
@@ -2148,10 +2148,10 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
         bennErrors.GetErrors( errors );
       }
 
-      // РћС€РёР±РєРё, РєРѕС‚РѕСЂС‹Рµ РјРѕР¶РЅРѕ РёРґРµРЅС‚РёС„РёС†РёСЂРѕРІР°С‚СЊ РЅР° СЌС‚РѕРј СѓСЂРѕРІРЅРµ
+      // Ошибки, которые можно идентифицировать на этом уровне
       if ( errors.Count() == 0 )
       {
-        // Р•СЃР»Рё С…РѕС‚СЏ Р±С‹ РѕРґРЅР° РёР· РґР»РёРЅ СЃС‡РёС‚Р°РµС‚СЃСЏ РЅРµ РІ Р°Р±СЃРѕР»СЋС‚РЅРѕРј РІРёРґРµ, С‚Рѕ РµРµ РЅР°РґРѕ РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ
+        // Если хотя бы одна из длин считается не в абсолютном виде, то ее надо пересчитать
         if ( IsNeedInvertDirectionBend() )
           m_params.m_dirAngle = !m_params.m_dirAngle;
 
@@ -2163,12 +2163,12 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
             creatorBends->InvertAngleDirection();
           creatorBends->GetParams( params, true );
         }
-        // РІ СЃС‚Р°СЂС‹С… РІРµСЂСЃРёСЏС… РЅРµРїСЂР°РІРёР»СЊРЅРѕ СЂР°СЃСЃС‡РёС‚С‹РІР°Р»РѕСЃСЊ СЃРјРµС‰РµРЅРёРµ
+        // в старых версиях неправильно рассчитывалось смещение
         if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
-          // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+          // Смещение посчитать после всех вычислений
           m_params.CalcAfterValues( params );
 
-        // Р•СЃР»Рё С…РѕС‚СЏ Р±С‹ РѕРґРЅР° РёР· РґР»РёРЅ СЃС‡РёС‚Р°РµС‚СЃСЏ РЅРµ РІ Р°Р±СЃРѕР»СЋС‚РЅРѕРј РІРёРґРµ, С‚Рѕ РµРµ РЅР°РґРѕ РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ
+        // Если хотя бы одна из длин считается не в абсолютном виде, то ее надо пересчитать
         bool suitableParamValues = true;
         if ( m_params.m_sideLeft.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute ||
           (m_params.m_sideRight.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute && m_params.m_bendLengthBy2Sides) )
@@ -2180,17 +2180,17 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
           for ( MbCurveEdge * edge : edges )
             curveEdges.Add( edge );
 
-          codeError = BendSheetSolidByEdges( *mksdParam.m_prevSolid/*mksdParam.m_prevSolid*/,     // РёСЃС…РѕРґРЅРѕРµ С‚РµР»Рѕ
-            mksdParam.m_wDone == wd_Phantom ? cm_Copy : cm_KeepHistory,  // СЂР°Р±РѕС‚Р°С‚СЊ СЃ РєРѕРїРёРµР№ РѕР±РѕР»РѕС‡РєРё РёСЃС…РѕРґРЅРѕРіРѕ С‚РµР»Р°
-            curveEdges,                // СЂС‘Р±СЂР° СЃРіРёР±РѕРІ
-            IsStraighten(),            // РіРЅСѓС‚СЊ
-            params,                    // РїР°СЂР°РјРµС‚СЂС‹ СЃРіРёР±Р°
-            pComplexName,              // РёРјРµРЅРѕРІР°С‚РµР»СЊ
-            creatorBends->m_mbPars,    // РїР°СЂР°РјРµС‚СЂС‹ РєР°Р¶РґРѕРіРѕ РёР· РїРѕРґСЃРіРёР±РѕРІ, С‡С‚РѕР±С‹ СЃСЋРґР° РјР°С‚РµРјР°С‚РёРєР° РїРѕР»РѕР¶РёР»Р° РІРЅСѓС‚СЂРµРЅРЅРёРµ Рё РІРЅРµС€РЅРёРµ РїР»РѕСЃРєРѕСЃС‚Рё СЃРіРёР±Р°
-            result );                  // СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµРµ С‚РµР»Рѕ
+          codeError = BendSheetSolidByEdges( *mksdParam.m_prevSolid/*mksdParam.m_prevSolid*/,     // исходное тело
+            mksdParam.m_wDone == wd_Phantom ? cm_Copy : cm_KeepHistory,  // работать с копией оболочки исходного тела
+            curveEdges,                // рёбра сгибов
+            IsStraighten(),            // гнуть
+            params,                    // параметры сгиба
+            pComplexName,              // именователь
+            creatorBends->m_mbPars,    // параметры каждого из подсгибов, чтобы сюда математика положила внутренние и внешние плоскости сгиба
+            result );                  // результирующее тело
 
           if ( mksdParam.m_wDone != wd_Phantom )
-            // РЅР°РґРѕ Р·Р°РїРѕРјРЅРёС‚СЊ РІСЃРµ СЃРіРёР±С‹ Рё РёС… СЂР°РґРёСѓСЃР°
+            // надо запомнить все сгибы и их радиуса
             creatorBends->SetMultiResult( result );
 
           if ( mksdParam.m_wDone != wd_Phantom && codeError == rt_SelfIntersect )
@@ -2198,7 +2198,7 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
 
           if ( mksdParam.m_wDone != wd_Phantom && codeError == rt_Success && result )
             if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x07000110L )
-              ::CheckIndexCutedBendFaces( *result, MainId() ); // РґР»СЏ РїСЂР°РІРёР»СЊРЅРѕР№ РёРґРµРЅС‚РёС„РёРєР°С†РёРё РіСЂР°РЅРµР№ СЃРіРёР±Р°
+              ::CheckIndexCutedBendFaces( *result, MainId() ); // для правильной идентификации граней сгиба
         }
       }
 
@@ -2219,7 +2219,7 @@ MbSolid * ShMtBend::PrepareLocalSolid( std::vector<MbCurveEdge*> edges,
 
 //--------------------------------------------------------------------------------
 /**
-Р“РѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚ РєР°Рє СЂРµР±СЂРѕ
+Годится ли пришедший объект как ребро
 \param curveEdge
 \param thickness
 \return bool
@@ -2234,7 +2234,7 @@ bool ShMtBend::IsSuitedObject( const MbCurveEdge & curveEdge, double thickness )
   MbFace *faceMinus = curveEdge.GetFaceMinus();
   if ( facePlus && faceMinus ) {
     double angle;
-    // РЈРіРѕР» РјРµР¶РґСѓ РіСЂР°РЅСЏРјРё РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ 90
+    // Угол между гранями должен быть 90
     if ( facePlus->AngleWithFace( *faceMinus, angle ) && ::fabs( M_PI_2 - angle ) < Math::metricEpsilon )
     {
       shMtFace = ::FindSheetFace( curveEdge );
@@ -2249,7 +2249,7 @@ bool ShMtBend::IsSuitedObject( const MbCurveEdge & curveEdge, double thickness )
 
 //--------------------------------------------------------------------------------
 /**
-Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+Возможно ли для параметра задавать допуск
 \param varParameter
 \return bool
 */
@@ -2269,14 +2269,14 @@ bool ShMtBend::IsCanSetTolerance( const VarParameter & varParameter ) const
 
 
 //------------------------------------------------------------------------------
-// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+// Является ли параметр угловым
 // ---
 bool ShMtBend::ParameterIsAngular( const VarParameter & varParameter ) const
 {
   if ( &varParameter == &const_cast<ShMtBendParameters&>(m_params).GetAngleVar() ||
-    &varParameter == &m_params.m_sideLeft.m_deviation || // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+    &varParameter == &m_params.m_sideLeft.m_deviation || // угол уклона продолжения сгиба
     &varParameter == &m_params.m_sideRight.m_deviation ||
-    &varParameter == &m_params.m_sideLeft.m_angle || // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р°
+    &varParameter == &m_params.m_sideLeft.m_angle || // угол уклона края сгиба
     &varParameter == &m_params.m_sideRight.m_angle )
     return  true;
 
@@ -2286,7 +2286,7 @@ bool ShMtBend::ParameterIsAngular( const VarParameter & varParameter ) const
 
 //--------------------------------------------------------------------------------
 /**
-Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+Для параметра получить неуказанный предельный допуск
 \param varParameter
 \param tType
 \param reader
@@ -2298,28 +2298,28 @@ double ShMtBend::GetGeneralTolerance( const VarParameter & varParameter, General
   if ( &varParameter == &const_cast<ShMtBendParameters&>(m_params).GetAngleVar() )
   {
     //    double angle = m_params.m_typeAngle ? m_params.GetAngle() : 180 - m_params.GetAngle();
-    // CC K14 Р”Р»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїСѓСЃРєР° РёСЃРїРѕР»СЊР·СѓРµРј СЂР°РґРёСѓСЃ. РЎРѕРіР»Р°СЃРѕРІР°РЅРѕ СЃ Р‘СѓР»РіР°РєРѕРІС‹Рј
-    return reader.GetTolerance( m_params.m_distance, // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    // CC K14 Для получения допуска используем радиус. Согласовано с Булгаковым
+    return reader.GetTolerance( m_params.m_distance, // внешний радиус BUG 62631
       vd_angle,
       tType );
   }
-  else if ( &varParameter == &m_params.m_sideLeft.m_deviation || // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+  else if ( &varParameter == &m_params.m_sideLeft.m_deviation || // угол уклона продолжения сгиба
     &varParameter == &m_params.m_sideRight.m_deviation )
   {
     if ( m_params.m_sideLeft.m_length < Math::paramEpsilon ||
       ::fabs( varParameter.GetDoubleValue() ) < Math::paramEpsilon )
       return 0.0;
-    // VB РЎ РґРІСѓРјСЏ СЃС‚РѕСЂРѕРЅР°РјРё Р°Р±СЃРѕР»СЋС‚РЅРѕ РЅРµРїРѕРЅСЏС‚РЅРѕ, С‡С‚Рѕ Р¶Рµ Р·РґРµСЃСЊ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ
+    // VB С двумя сторонами абсолютно непонятно, что же здесь должно быть
     return reader.GetTolerance( m_params.m_sideLeft.m_length, vd_angle, tType );
   }
-  else if ( &varParameter == &m_params.m_sideLeft.m_angle || // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р°
+  else if ( &varParameter == &m_params.m_sideLeft.m_angle || // угол уклона края сгиба
     &varParameter == &m_params.m_sideRight.m_angle )
   {
     if ( ::fabs( varParameter.GetDoubleValue() ) < Math::paramEpsilon )
       return 0.0;
 
     double angle = ::fabs( m_params.m_typeAngle ? m_params.GetAngle() : 180 - m_params.GetAngle() );
-    return reader.GetTolerance( M_PI * m_params.m_distance * angle / 180.0, // РґР»РёРЅР° РґСѓРіРё
+    return reader.GetTolerance( M_PI * m_params.m_distance * angle / 180.0, // длина дуги
       vd_angle,
       tType );
   }
@@ -2330,7 +2330,7 @@ double ShMtBend::GetGeneralTolerance( const VarParameter & varParameter, General
 
 
 //------------------------------------------------------------------------------------
-/// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+/// Расчет дуги для пересчета угловых параметров по допуску
 /**
 // \method    InitGeneralTolerances
 // \access    public
@@ -2342,7 +2342,7 @@ void ShMtBend::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
 {
   if ( recalc )
   {
-    // РЈ СЃРіРёР±РѕРІ Р±СЂР°С‚СЊ РЅР°РёРјРµРЅСЊС€РёР№ СЂР°РґРёСѓСЃ
+    // У сгибов брать наименьший радиус
     double rad = MB_MAXDOUBLE;
     for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
     {
@@ -2351,16 +2351,16 @@ void ShMtBend::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
         rad = rad_i;
     }
 
-    m_params.m_distance = rad + GetThickness(); // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    m_params.m_distance = rad + GetThickness(); // внешний радиус BUG 62631
   }
 
   VariableParametersOwner::UpdateMeasurePars( gType, recalc );
 }
 
 
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+// Создать хот-точки
 // ---
 void ShMtBend::GetHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -2370,39 +2370,39 @@ void ShMtBend::GetHotPoints( RPArray<HotPointParam> & hotPoints,
 {
   if ( type == ActiveHotPoints::hp_none || type == ActiveHotPoints::hp_param )
   {
-    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendDeepness, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // СЃРјРµС‰РµРЅРёРµ СЃРіРёР±Р°
-    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendLeftSideLength, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // РїСЂРѕРґРѕР»Р¶РµРЅРёРµ СЃРіРёР±Р° СЃР»РµРІР°
-    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendRightSideLength, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // РїСЂРѕРґРѕР»Р¶РµРЅРёРµ СЃРіРёР±Р° СЃРїСЂР°РІР°
-    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendLeftSideObjectOffset, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СЃРјРµС‰РµРЅРёРµ РґР»СЏ РґР»РёРЅС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕР±СЉРµРєС‚Р° СЃР»РµРІР°
-    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendRightSideObjectOffset, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СЃРјРµС‰РµРЅРёРµ РґР»СЏ РґР»РёРЅС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕР±СЉРµРєС‚Р° СЃРїСЂР°РІР°
+    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendDeepness, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // смещение сгиба
+    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendLeftSideLength, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // продолжение сгиба слева
+    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendRightSideLength, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // продолжение сгиба справа
+    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendLeftSideObjectOffset, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // смещение для длины относительно объекта слева
+    hotPoints.Add( new HotPointPlacementParam( ehp_ShMtBendRightSideObjectOffset, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // смещение для длины относительно объекта справа
 
-    hotPoints.Add( new HotPointBendAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // СѓРіРѕР» СЃРіРёР±Р°
-    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideLeftDistance, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideRightDistance, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendWidth, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // С€РёСЂРёРЅР°
+    hotPoints.Add( new HotPointBendAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // угол сгиба
+    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideLeftDistance, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // отступ от края сгиба левой стороны
+    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideRightDistance, editComponent, topComponent, HotPointVectorParam::ht_moveInvert ) ); // отступ от края сгиба правой стороны
+    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendWidth, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // ширина
     hotPoints.Add( new HotPointDirectionParam( ehp_ShMtBendDirection, editComponent, topComponent ) );
-    hotPoints.Add( new HotPointBendRadiusParam( ehp_ShMtBendRadius, editComponent, topComponent ) ); // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+    hotPoints.Add( new HotPointBendRadiusParam( ehp_ShMtBendRadius, editComponent, topComponent ) ); // радиус сгиба
   }
   if ( !GetCircuitParameters().IsAnyCreateParam() && (type == ActiveHotPoints::hp_none || type == ActiveHotPoints::hp_additional) )
   {
-    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideLeftWidening, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightWidening, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideLeftAngle, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightAngle, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideLeftDeviation, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightDeviation, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+    hotPoints.Add( new HotPointVectorParam( ehp_ShMtBendSideLeftWidening, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // расширение  продолжения (прямой части) сгиба левой стороны
+    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightWidening, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // расширение  продолжения (прямой части) сгиба правой стороны
+    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideLeftAngle, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // угол уклона края сгиба левой стороны
+    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightAngle, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // угол уклона края сгиба правой стороны
+    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideLeftDeviation, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // угол уклона продолжения (прямой части) сгиба левой стороны
+    hotPoints.Add( new HotPointBendParam( ehp_ShMtBendSideRightDeviation, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // угол уклона продолжения (прямой части) сгиба правой стороны
   }
   if ( type == ActiveHotPoints::hp_none || type == ActiveHotPoints::hp_thinwall )
   {
-    hotPoints.Add( new ArrowHeadPointParam( ehp_ShMtBendWidthBend, editComponent, topComponent, HotPointVectorParam::ht_move ) );     // С€РёСЂРёРЅР°  СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
-    hotPoints.Add( new ArrowHeadPointParam( ehp_ShMtBendDepthBend, editComponent, topComponent/*, HotPointVectorParam::ht_move*/ ) ); // РіР»СѓР±РёРЅР° СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
+    hotPoints.Add( new ArrowHeadPointParam( ehp_ShMtBendWidthBend, editComponent, topComponent, HotPointVectorParam::ht_move ) );     // ширина  разгрузки сгиба
+    hotPoints.Add( new ArrowHeadPointParam( ehp_ShMtBendDepthBend, editComponent, topComponent/*, HotPointVectorParam::ht_move*/ ) ); // глубина разгрузки сгиба
   }
 }
 
 
 //------------------------------------------------------------------------------
 /**
-РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+Пересчитать местоположение хот-точки
 \param hotPoints -
 \param type -
 \param pD3DrawTool -
@@ -2427,7 +2427,7 @@ void ShMtBend::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
       bendParam ) );
     if ( util )
     {
-      // Р•СЃС‚СЊ СЂРµР±СЂРѕ, СѓСЃС‚Р°РЅРѕРІРёРј РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ (РёС… РјРѕР¶РµС‚ РЅРµ Р±С‹С‚СЊ)
+      // Есть ребро, установим опорные объекты (их может не быть)
       util->SetLengthBaseObjects( &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_leftSideLengthBaseObject ),
         &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_rightSideLengthBaseObject ) );
 
@@ -2437,30 +2437,30 @@ void ShMtBend::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
 
         switch ( hotPoint->GetIdent() )
         {
-        case ehp_ShMtBendDeepness: util->UpdateDeepnessHotPoint( *hotPoint, params, m_params ); break; // СЃРјРµС‰РµРЅРёРµ СЃРіРёР±Р°
-        case ehp_ShMtBendLeftSideLength: util->UpdateSideLengthHotPoint( *hotPoint, params, m_params, ShMtBendSide::LEFT_SIDE ); break; // РїСЂРѕРґРѕР»Р¶РµРЅРёРµ СЃРіРёР±Р° СЃР»РµРІР°
-        case ehp_ShMtBendRightSideLength: util->UpdateSideLengthHotPoint( *hotPoint, params, m_params, ShMtBendSide::RIGHT_SIDE ); break; // РїСЂРѕРґРѕР»Р¶РµРЅРёРµ СЃРіРёР±Р° СЃРїСЂР°РІР°
-        case ehp_ShMtBendLeftSideObjectOffset: util->UpdateSideObjectOffsetHotPoint( *hotPoint, params, m_params, ShMtBendSide::LEFT_SIDE ); break; // СЃРјРµС‰РµРЅРёРµ РґР»СЏ РґР»РёРЅС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° СЃР»РµРІР°
-        case ehp_ShMtBendRightSideObjectOffset: util->UpdateSideObjectOffsetHotPoint( *hotPoint, params, m_params, ShMtBendSide::RIGHT_SIDE ); break; // СЃРјРµС‰РµРЅРёРµ РґР»СЏ РґР»РёРЅС‹ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° СЃРїСЂР°РІР°
-        case ehp_ShMtBendSideLeftDistance: util->UpdateSideLeftDistanceHotPoint( *hotPoint, params, m_params ); break; // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-        case ehp_ShMtBendSideRightDistance: util->UpdateSideRightDistanceHotPoint( *hotPoint, params, m_params ); break; // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-        case ehp_ShMtBendWidth: util->UpdateWidthDistanceHotPoint( *hotPoint, params, m_params ); break; // С€РёСЂРёРЅР°
-        case ehp_ShMtBendDirection: util->UpdateDirctionHotPoint( *hotPoint, m_params ); break; // РЅР°РїСЂР°РІР»РµРЅРёРµ
-        case ehp_ShMtBendSideLeftWidening: util->UpdateSideLeftWideningHotPoint( *hotPoint, params, m_params ); break; // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-        case ehp_ShMtBendSideRightWidening: util->UpdateSideRightWideningHotPoint( *hotPoint, params, m_params ); break; // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
-        case ehp_ShMtBendWidthBend: util->UpdateWidthDismissalHotPoint( *hotPoint, params, m_params ); break; // С€РёСЂРёРЅР° СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
-        case ehp_ShMtBendDepthBend: util->UpdateDepthDismissalHotPoint( *hotPoint, params, m_params ); break; // РіР»СѓР±РёРЅР° СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
+        case ehp_ShMtBendDeepness: util->UpdateDeepnessHotPoint( *hotPoint, params, m_params ); break; // смещение сгиба
+        case ehp_ShMtBendLeftSideLength: util->UpdateSideLengthHotPoint( *hotPoint, params, m_params, ShMtBendSide::LEFT_SIDE ); break; // продолжение сгиба слева
+        case ehp_ShMtBendRightSideLength: util->UpdateSideLengthHotPoint( *hotPoint, params, m_params, ShMtBendSide::RIGHT_SIDE ); break; // продолжение сгиба справа
+        case ehp_ShMtBendLeftSideObjectOffset: util->UpdateSideObjectOffsetHotPoint( *hotPoint, params, m_params, ShMtBendSide::LEFT_SIDE ); break; // смещение для длины относительно опорного объекта слева
+        case ehp_ShMtBendRightSideObjectOffset: util->UpdateSideObjectOffsetHotPoint( *hotPoint, params, m_params, ShMtBendSide::RIGHT_SIDE ); break; // смещение для длины относительно опорного объекта справа
+        case ehp_ShMtBendSideLeftDistance: util->UpdateSideLeftDistanceHotPoint( *hotPoint, params, m_params ); break; // отступ от края сгиба левой стороны
+        case ehp_ShMtBendSideRightDistance: util->UpdateSideRightDistanceHotPoint( *hotPoint, params, m_params ); break; // отступ от края сгиба правой стороны
+        case ehp_ShMtBendWidth: util->UpdateWidthDistanceHotPoint( *hotPoint, params, m_params ); break; // ширина
+        case ehp_ShMtBendDirection: util->UpdateDirctionHotPoint( *hotPoint, m_params ); break; // направление
+        case ehp_ShMtBendSideLeftWidening: util->UpdateSideLeftWideningHotPoint( *hotPoint, params, m_params ); break; // расширение  продолжения (прямой части) сгиба левой стороны
+        case ehp_ShMtBendSideRightWidening: util->UpdateSideRightWideningHotPoint( *hotPoint, params, m_params ); break; // расширение  продолжения (прямой части) сгиба правой стороны
+        case ehp_ShMtBendWidthBend: util->UpdateWidthDismissalHotPoint( *hotPoint, params, m_params ); break; // ширина разгрузки сгиба
+        case ehp_ShMtBendDepthBend: util->UpdateDepthDismissalHotPoint( *hotPoint, params, m_params ); break; // глубина разгрузки сгиба
 
-        case ehp_ShMtBendAngle: // СѓРіРѕР» СЃРіРёР±Р°
+        case ehp_ShMtBendAngle: // угол сгиба
         {
           ((HotPointBendAngleParam *)hotPoint)->params = params;
           util->UpdateAngleHotPoint( *hotPoint, params, m_params );
         }
         break;
 
-        case ehp_ShMtBendRadius: // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+        case ehp_ShMtBendRadius: // радиус сгиба
         {
-          // С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР° РѕС‚РѕР±СЂР°Р¶Р°РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃРіРёР± РІС‹РїРѕР»РЅРµРЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј СЃР°РјРѕР№ РѕРїРµСЂР°С†РёРё
+          // хот-точку радиуса отображаем только если сгиб выполнен по параметрам самой операции
           if ( bendParam && bendParam->m_byOwner )
           {
             ((HotPointBendRadiusParam *)hotPoint)->params = params;
@@ -2471,28 +2471,28 @@ void ShMtBend::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
         }
         break;
 
-        case ehp_ShMtBendSideLeftAngle: // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+        case ehp_ShMtBendSideLeftAngle: // угол уклона края сгиба левой стороны
         {
           ((HotPointBendParam*)hotPoint)->params = params;
           util->UpdateSideLeftAngleHotPoint( *hotPoint, params, m_params );
         }
         break;
 
-        case ehp_ShMtBendSideRightAngle: // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+        case ehp_ShMtBendSideRightAngle: // угол уклона края сгиба правой стороны
         {
           ((HotPointBendParam*)hotPoint)->params = params;
           util->UpdateSideRightAngleHotPoint( *hotPoint, params, m_params );
         }
         break;
 
-        case ehp_ShMtBendSideLeftDeviation: // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+        case ehp_ShMtBendSideLeftDeviation: // угол уклона продолжения (прямой части) сгиба левой стороны
         {
           ((HotPointBendParam*)hotPoint)->params = params;
           util->UpdateSideLeftDeviationHotPoint( *hotPoint, params, m_params );
         }
         break;
 
-        case ehp_ShMtBendSideRightDeviation: // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+        case ehp_ShMtBendSideRightDeviation: // угол уклона продолжения (прямой части) сгиба правой стороны
         {
           ((HotPointBendParam*)hotPoint)->params = params;
           util->UpdateSideRightDeviationHotPoint( *hotPoint, params, m_params );
@@ -2512,7 +2512,7 @@ void ShMtBend::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
 
 //--------------------------------------------------------------------------------
 /**
-РќР°С‡Р°Р»Рѕ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РЅР°Р¶Р°С‚Р° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+Начало перетаскивания хот-точки (на хот-точке нажата левая кнопка мыши)
 \param hotPoint
 \return bool
 */
@@ -2525,7 +2525,7 @@ bool ShMtBend::BeginDragHotPoint( HotPointParam & hotPoint )
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РІРµСЂС€РµРЅРёРµ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РѕС‚РїСѓС‰РµРЅР° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+Завершение перетаскивания хот-точки (на хот-точке отпущена левая кнопка мыши)
 \param hotPoint
 \param pD3DrawTool
 \return bool
@@ -2538,11 +2538,11 @@ bool ShMtBend::EndDragHotPoint( HotPointParam & hotPoint, D3Draw & pD3DrawTool )
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - СЃРґРІРёРЅСѓС‚Р°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРґРІРёРіР°
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+\param hotPoint - сдвинутая хот-точка
+\param vector - вектор сдвига
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
 */
 //---
 bool ShMtBend::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
@@ -2588,70 +2588,70 @@ bool ShMtBend::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vect
       step, m_params );
     break;
 
-  case ehp_ShMtBendSideLeftDistance: // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideLeftDistance: // отступ от края сгиба левой стороны
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.m_sideLeft.m_distance, -5E+5, 5E+5 );
     break;
 
-  case ehp_ShMtBendSideRightDistance: // РѕС‚СЃС‚СѓРї РѕС‚ РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideRightDistance: // отступ от края сгиба правой стороны
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.m_sideRight.m_distance, -5E+5, 5E+5 );
     break;
 
-  case ehp_ShMtBendWidth: // С€РёСЂРёРЅР°
+  case ehp_ShMtBendWidth: // ширина
     ret = SetHotPointVector( (HotPointVectorParam&)hotPoint, vector, step,
       m_params.m_width, 0.0002, 5E+5 );
     break;
 
-  case ehp_ShMtBendDirection: // РЅР°РїСЂР°РІР»РµРЅРёРµ
+  case ehp_ShMtBendDirection: // направление
     ret = ((HotPointDirectionParam &)hotPoint).SetHotPoint( vector,
       m_params.m_dirAngle,
       pD3DrawTool );
     break;
 
-  case ehp_ShMtBendRadius: // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  case ehp_ShMtBendRadius: // радиус сгиба
     ret = ((HotPointBendRadiusParam &)hotPoint).SetRadiusHotPoint( vector, step,
       m_params, GetThickness() );
     break;
 
-  case ehp_ShMtBendSideLeftWidening: // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideLeftWidening: // расширение  продолжения (прямой части) сгиба левой стороны
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.m_sideLeft.m_widening, -5E+5, 5E+5 );
     break;
 
-  case ehp_ShMtBendSideRightWidening: // СЂР°СЃС€РёСЂРµРЅРёРµ  РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideRightWidening: // расширение  продолжения (прямой части) сгиба правой стороны
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.m_sideRight.m_widening, -5E+5, 5E+5 );
     break;
 
-  case ehp_ShMtBendSideLeftAngle: // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideLeftAngle: // угол уклона края сгиба левой стороны
     ret = SetHotPointVectorAngle( (HotPointBendParam &)hotPoint, vector, step,
       m_params.m_sideLeft.m_angle, -90.0, 90.0, GetThickness() );
     break;
 
-  case ehp_ShMtBendSideRightAngle: // СѓРіРѕР» СѓРєР»РѕРЅР° РєСЂР°СЏ СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideRightAngle: // угол уклона края сгиба правой стороны
     ret = SetHotPointVectorAngle( (HotPointBendParam &)hotPoint, vector, step,
       m_params.m_sideRight.m_angle, -90.0, 90.0, GetThickness() );
     break;
 
-  case ehp_ShMtBendSideLeftDeviation: // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideLeftDeviation: // угол уклона продолжения (прямой части) сгиба левой стороны
     ret = SetHotPointVectorDeviation( (HotPointBendParam &)hotPoint, vector,
       step, m_params.m_sideLeft.m_deviation,
       -90.0, 90.0, ShMtBendSide::LEFT_SIDE );
     break;
 
-  case ehp_ShMtBendSideRightDeviation: // СѓРіРѕР» СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ (РїСЂСЏРјРѕР№ С‡Р°СЃС‚Рё) СЃРіРёР±Р° РїСЂР°РІРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  case ehp_ShMtBendSideRightDeviation: // угол уклона продолжения (прямой части) сгиба правой стороны
     ret = SetHotPointVectorDeviation( (HotPointBendParam &)hotPoint, vector,
       step, m_params.m_sideRight.m_deviation,
       -90.0, 90.0, ShMtBendSide::RIGHT_SIDE );
     break;
 
-  case ehp_ShMtBendWidthBend: // С€РёСЂРёРЅР°  СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
+  case ehp_ShMtBendWidthBend: // ширина  разгрузки сгиба
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.GetWidthVar(), 0.00, 5E+5 );
     break;
 
-  case ehp_ShMtBendDepthBend: // РіР»СѓР±РёРЅР°  СЂР°Р·РіСЂСѓР·РєРё СЃРіРёР±Р°
+  case ehp_ShMtBendDepthBend: // глубина  разгрузки сгиба
     ret = SetHotPointVector( (HotPointVectorParam &)hotPoint, vector, step,
       m_params.GetDepthVar(), 0.00, 5E+5 );
     break;
@@ -2672,7 +2672,7 @@ HotPointBendOperUtil * ShMtBend::GetHotPointUtil( MbBendByEdgeValues & params,
 
 //--------------------------------------------------------------------------------
 /**
-РЎРїРµС†РёР°Р»СЊРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ СЂР°СЃС‡РµС‚РѕРІ
+Специальный класс для расчетов
 \param params
 \param editComponent
 \param children
@@ -2705,10 +2705,10 @@ HotPointBendOperUtil * ShMtBend::GetHotPointUtil( MbBendByEdgeValues & params,
     MbCurveEdge * curveEdge = partEdge->GetMathEdge();
     if ( curveEdge )
     {
-      m_params.ReadBaseIfChanged( editComponent ); // РµСЃР»Рё РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РІРµСЂС‚РєРё Р±СЂР°С‚СЊ РёР· Р±Р°Р·С‹, С‚Рѕ РїРµСЂРµС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ, РµСЃР»Рё РЅР°РґРѕ
+      m_params.ReadBaseIfChanged( editComponent ); // если параметры развертки брать из базы, то перечитать базу, если надо
       m_params.GetValues( params, curveEdge->GetMetricLength(), GetObjVersion() );
       if ( GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0800000BL )
-        // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+        // Смещение посчитать после всех вычислений
         m_params.CalcAfterValues( params );
 
       if ( children )
@@ -2719,10 +2719,10 @@ HotPointBendOperUtil * ShMtBend::GetHotPointUtil( MbBendByEdgeValues & params,
       }
 
       if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
-        // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+        // Смещение посчитать после всех вычислений
         m_params.CalcAfterValues( params );
 
-      // Р’ РЅРµРєРѕС‚РѕСЂС‹С… РІС‹С‡РёСЃР»РµРЅРёСЏС… РЅРµРѕР±С…РѕРґРёРјРѕ РёРіРЅРѕСЂРёСЂРѕРІР°С‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ СЂР°Р·РѕРіРЅСѓС‚РѕСЃС‚Рё
+      // В некоторых вычислениях необходимо игнорировать состояние разогнутости
       util = new HotPointBendOperUtil( *curveEdge, params, ignoreStraightMode ? false : IsStraighten(), GetThickness() );
     }
   }
@@ -2733,7 +2733,7 @@ HotPointBendOperUtil * ShMtBend::GetHotPointUtil( MbBendByEdgeValues & params,
 
 //--------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+Создать хот-точки (зарезервированы индексы с 5000 до 5999)
 \param hotPoints
 \param editComponent
 \param topComponent
@@ -2747,17 +2747,17 @@ void ShMtBend::GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   ShMtBendObject &         children )
 {
   hotPoints.Add( new HotPointBendRadiusParam( ehp_ShMtBendObjectRadius, editComponent,
-    topComponent ) ); // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+    topComponent ) ); // радиус сгиба
 }
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - РїРµСЂРµС‚Р°СЃРєРёРІР°РµРјР°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРјРµС‰РµРЅРёСЏ
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoint - перетаскиваемая хот-точка
+\param vector - вектор смещения
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 bool ShMtBend::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
@@ -2767,7 +2767,7 @@ bool ShMtBend::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
 {
   bool ret = false;
 
-  if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius )            // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius )            // радиус сгиба
     ret = ((HotPointBendRadiusParam &)hotPoint).SetRadiusHotPoint( vector, step, children, GetThickness() );
 
   return ret;
@@ -2776,8 +2776,8 @@ bool ShMtBend::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
 
 //------------------------------------------------------------------------------
 /**
-РњРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
-\return РјРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
+Могут ли к объекту быть привязаны управляющие размеры
+\return могут ли к объекту быть привязаны управляющие размеры
 */
 //---
 bool ShMtBend::IsDimensionsAllowed() const
@@ -2788,7 +2788,7 @@ bool ShMtBend::IsDimensionsAllowed() const
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ С…РѕС‚-С‚РѕС‡РєРё РґР»СЏ СЂР°Р·РјРµСЂРѕРІ
+Получить хот-точки для размеров
 \param hotPoints
 \param editComponent
 \param topComponent
@@ -2814,8 +2814,8 @@ void ShMtBend::GetHotPointsForDimensions( RPArray<HotPointParam> & hotPoints,
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
-\param dimensions - СЂР°Р·РјРµСЂС‹
+Ассоциировать размеры с переменными родителя
+\param dimensions - размеры
 */
 //---
 void ShMtBend::AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions )
@@ -2844,10 +2844,10 @@ void ShMtBend::AssignDimensionsVariables( const SFDPArray<PartObject> & dimensio
 
 //------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param un - РёРјРµРЅРѕРІР°С‚РµР»СЊ
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+Создать размеры объекта по хот-точкам
+\param un - именователь
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBend::CreateDimensionsByHotPoints( IfUniqueName * un, SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -2921,9 +2921,9 @@ void ShMtBend::CreateDimensionsByHotPoints( IfUniqueName * un, SFDPArray<Generat
 
 //------------------------------------------------------------------------------
 /**
-РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+обновить геометрию размеров объекта по хот-точкам
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBend::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -2935,7 +2935,7 @@ void ShMtBend::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionD
   if ( hotPoints.Count() == 0 )
     return;
 
-  // #84969 Р’ СЃР»СѓС‡Р°Рµ РїСЂРѕР±Р»РµРј СЃ С„Р°РЅС‚РѕРјРѕРј СѓРґР°Р»РёРј СЂР°Р·РјРµСЂС‹
+  // #84969 В случае проблем с фантомом удалим размеры
   if ( GetPhantomError() != rt_Success && GetPhantomError() != -1 )
   {
     for ( size_t i = 0, c = dimensions.Count(); i < c; ++i )
@@ -2954,7 +2954,7 @@ void ShMtBend::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionD
   std::unique_ptr<HotPointBendOperUtil> util( GetHotPointUtil( params, hotPoints[0]->GetEditComponent( false ), bendParam ) );
   if ( !!util )
   {
-    // Р•СЃС‚СЊ СЂРµР±СЂРѕ, СѓСЃС‚Р°РЅРѕРІРёРј РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ (РёС… РјРѕР¶РµС‚ РЅРµ Р±С‹С‚СЊ)
+    // Есть ребро, установим опорные объекты (их может не быть)
     util->SetLengthBaseObjects( &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_leftSideLengthBaseObject ),
       &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_rightSideLengthBaseObject ) );
     if ( m_straighten )
@@ -2987,7 +2987,7 @@ void ShMtBend::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionD
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
+Обнулить размер радиуса
 \param dimensions -
 */
 //---
@@ -3001,7 +3001,7 @@ void ShMtBend::ResetRadiusDimension( const SFDPArray<GenerativeDimensionDescript
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р°
+Обнулить размер угла
 \param dimensions -
 */
 //---
@@ -3015,7 +3015,7 @@ void ShMtBend::ResetAngleDimension( const SFDPArray<GenerativeDimensionDescripto
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
+Ассоциировать размеры дочерних объектов - сгибов
 \param dimensions -
 \param children -
 */
@@ -3031,7 +3031,7 @@ void ShMtBend::AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & 
 
 //------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+Создать размеры объекта по хот-точкам для дочерних объектов
 \param un -
 \param dimensions -
 \param hotPoints -
@@ -3057,7 +3057,7 @@ void ShMtBend::CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
 
 //------------------------------------------------------------------------------
 /**
-РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+обновить геометрию размеров объекта по хот-точкам для дочерних объектов
 \param dimensions -
 \param hotPoints -
 \param children -
@@ -3091,8 +3091,8 @@ void ShMtBend::UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDi
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РґР»РёРЅРЅСѓ РІРЅСѓС‚СЂРµРЅРЅРµР№ РґСѓРіРё СЃРіРёР±Р°
-\return РґР»РёРЅРЅР° РІРЅСѓС‚СЂРµРЅРЅРµР№ РґСѓРіРё СЃРіРёР±Р°
+Получить длинну внутренней дуги сгиба
+\return длинна внутренней дуги сгиба
 */
 //---
 double ShMtBend::GetBendInternalLength( const HotPointBendOperUtil & pUtils ) const
@@ -3116,10 +3116,10 @@ double ShMtBend::GetBendInternalLength( const HotPointBendOperUtil & pUtils ) co
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°РјРµСЂС‹ СѓРіР»Р° СѓРєР»РѕРЅР° СЃС‚РѕСЂРѕРЅ СЃРіРёР±Р°
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
+Обновить рамеры угла уклона сторон сгиба
+\param dimensions - размеры
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
 */
 //---
 void ShMtBend::UpdateSideAngleDimensions( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3170,15 +3170,15 @@ void ShMtBend::UpdateSideAngleDimensions( const SFDPArray<GenerativeDimensionDes
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРіР»Р° СѓРєР»РѕРЅР° СЃС‚РѕСЂРѕРЅС‹ СЃРіРёР±Р°
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
-\param dimensionLength - РґР»РёРЅРЅР° РІС‹РЅРѕСЃРЅС‹С… Р»РёРЅРёР№
-\param hotPointId - id С…РѕС‚-С‚РѕС‡РєРё СЃРІСЏР·Р°РЅРЅРѕР№ СЃ СЂР°Р·РјРµСЂРѕРј
-\param angle - Р·РЅР°С‡РµРЅРёРµ СѓРіР»Р° СѓРєР»РѕРЅР°
-\param dimensionCenter - С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ С‚РѕС‡РєР° СЂР°Р·РјРµСЂР° СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера угла уклона стороны сгиба
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
+\param dimensionLength - длинна выносных линий
+\param hotPointId - id хот-точки связанной с размером
+\param angle - значение угла уклона
+\param dimensionCenter - центральная точка размера размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBend::GetSideAngleDimensionParameters( const HotPointBendOperUtil & utils,
@@ -3241,10 +3241,10 @@ bool ShMtBend::GetSideAngleDimensionParameters( const HotPointBendOperUtil & uti
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ - РіР»СѓР±РёРЅР°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
+Обновить размер освобождения - глубина
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
 */
 //---
 void ShMtBend::UpdateDepthReleaseDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3274,12 +3274,12 @@ void ShMtBend::UpdateDepthReleaseDimension( const SFDPArray<GenerativeDimensionD
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РіР»СѓР±РёРЅС‹
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
-\param dimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера освобождения глубины
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
+\param dimensionPlacement - положение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBend::GetDepthReleaseDimensionParameters( const HotPointBendOperUtil & utils,
@@ -3320,10 +3320,10 @@ bool ShMtBend::GetDepthReleaseDimensionParameters( const HotPointBendOperUtil & 
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ - С€РёСЂРёРЅР°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
+Обновить размер освобождения - ширина
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
 */
 //---
 void ShMtBend::UpdateWidthReleaseDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3353,13 +3353,13 @@ void ShMtBend::UpdateWidthReleaseDimension( const SFDPArray<GenerativeDimensionD
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ С€РёСЂРёРЅС‹
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param pHotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
-\param pDimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param pDimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param pDimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера освобождения ширины
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
+\param pHotPoints - хот-точки операции
+\param pDimensionPlacement - положение размера
+\param pDimensionPoint1 - точка 1 размера
+\param pDimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBend::GetWidthReleaseDimensionParameters( const HotPointBendOperUtil & utils,
@@ -3398,17 +3398,17 @@ bool ShMtBend::GetWidthReleaseDimensionParameters( const HotPointBendOperUtil & 
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂС‹ СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
+Обновить размеры уклона продолжения сгиба
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки операции
 */
 //---
 void ShMtBend::UpdateDeviationDimensions( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
   const HotPointBendOperUtil & utils,
   const RPArray<HotPointParam> & hotPoints ) const
 {
-  // Р›РµРІР°СЏ Рё РїСЂР°РІР°СЏ СЃС‚РѕСЂРѕРЅР° СЂР°Р·РґРµР»СЏСЋС‚СЃСЏ С‚.Рє. РґР»СЏ РѕР±СЉРµРґРёРЅРµРЅРёСЏ С‚СЂРµР±СѓРµС‚СЃСЏ РІС‹РЅРѕСЃРёС‚СЊ РјРЅРѕРіРѕ РїР°СЂР°РјРµС‚СЂРѕРІ
+  // Левая и правая сторона разделяются т.к. для объединения требуется выносить много параметров
   if ( m_params.m_sideLeft.m_typeSide == ShMtBendSide::ts_angle )
   {
     IFPTR( OperationAngularDimension ) leftDimension( FindGnrDimension( dimensions, ed_deviationLeft, false ) );
@@ -3459,15 +3459,15 @@ void ShMtBend::UpdateDeviationDimensions( const SFDPArray<GenerativeDimensionDes
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param deviationHotPointId - id С…РѕС‚-С‚РѕС‡РєРё СѓРєР»РѕРЅР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ
-\param sideAngleHotPointId - id С…РѕС‚-С‚РѕС‡РєРё СѓРєР»РѕРЅР° СЃРіРёР±Р°
-\param dimensionCenter - С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ С‚РѕС‡РєР° СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера уклона продолжения
+\param dimensions - размеры
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки
+\param deviationHotPointId - id хот-точки уклона продолжения
+\param sideAngleHotPointId - id хот-точки уклона сгиба
+\param dimensionCenter - центральная точка размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBend::GetDeviationDimensionParameters( const HotPointBendOperUtil & utils,
@@ -3505,17 +3505,17 @@ bool ShMtBend::GetDeviationDimensionParameters( const HotPointBendOperUtil & uti
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°СЃС€РёСЂРµРЅРёСЏ СЃРіРёР±Р°
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param pHotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
+Обновить размер расширения сгиба
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
+\param pHotPoints - хот-точки операции
 */
 //---
 void ShMtBend::UpdateWideningDimensions( const SFDPArray<GenerativeDimensionDescriptor> & pDimensions,
   const HotPointBendOperUtil & pUtils,
   const RPArray<HotPointParam> & pHotPoints )
 {
-  // Р»РµРІР°СЏ Рё РїСЂР°РІР°СЏ СЃС‚РѕСЂРѕРЅР° СЂР°Р·РґРµР»СЏСЋС‚СЃСЏ С‚.Рє. РґР»СЏ РѕР±СЉРµРґРёРЅРµРЅРёСЏ С‚СЂРµР±СѓРµС‚СЃСЏ РІС‹РЅРѕСЃРёС‚СЊ РјРЅРѕРіРѕ РїР°СЂР°РјРµС‚СЂРѕРІ
+  // левая и правая сторона разделяются т.к. для объединения требуется выносить много параметров
   if ( m_params.m_sideLeft.m_typeSide == ShMtBendSide::ts_widening )
   {
     IFPTR( OperationLinearDimension ) leftDimension( FindGnrDimension( pDimensions, ed_wideningLeft, false ) );
@@ -3566,14 +3566,14 @@ void ShMtBend::UpdateWideningDimensions( const SFDPArray<GenerativeDimensionDesc
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃС€РёСЂРµРЅРёСЏ
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param wideningHotPointId - id С…РѕС‚-С‚РѕС‡РєРё СЂР°Р·РјРµСЂР° СЂР°СЃС€РёСЂРµРЅРёСЏ РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ СЂР°СЃС‡РёС‚С‹РІР°СЋС‚СЃСЏ РїР°СЂР°РјРµС‚СЂС‹
-\param widening - РІРµР»РёС‡РёРЅР° СЂР°СЃС€РёСЂРµРЅРёСЏ
-\param dimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера расширения
+\param utils - параметры хот-точек
+\param hotPoints - хот-точки
+\param wideningHotPointId - id хот-точки размера расширения для которого расчитываются параметры
+\param widening - величина расширения
+\param dimensionPlacement - положение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBend::GetWideningDimensionParameters( const HotPointBendOperUtil & utils,
@@ -3625,13 +3625,13 @@ bool ShMtBend::GetWideningDimensionParameters( const HotPointBendOperUtil & util
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РѕС‚СЃС‚СѓРїР° СЃРіРёР±Р°. Р›РµРІС‹Р№ РёР»Рё РїСЂР°РІС‹Р№, РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РїРѕ id С…РѕС‚-С‚РѕС‡РєРё Рё СЂР°Р·РјРµСЂР°
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param pHotPoints - С…РѕС‚-С‚РѕС‡РєРё РѕРїРµСЂР°С†РёРё
-\param pHotPointId - id С…РѕС‚-С‚РѕС‡РєРё СЃРІСЏР·Р°РЅРЅРѕР№ СЃ СЂР°Р·РјРµСЂРѕРј
-\param pDimensionId - id СЂР°Р·РјРµСЂР°
-\param pIndent - РІРµР»РёС‡РёРЅР° РѕС‚СЃСѓРїР°
+Обновить размер отступа сгиба. Левый или правый, определяется по id хот-точки и размера
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
+\param pHotPoints - хот-точки операции
+\param pHotPointId - id хот-точки связанной с размером
+\param pDimensionId - id размера
+\param pIndent - величина отсупа
 */
 //---
 void ShMtBend::UpdateIndentDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3665,7 +3665,7 @@ void ShMtBend::UpdateIndentDimension( const SFDPArray<GenerativeDimensionDescrip
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РѕС‚СЃС‚СѓРїР° СЃРіРёР±Р°
+Получить параметры размера отступа сгиба
 */
 //---
 bool ShMtBend::GetIndentDimensionParameters( const HotPointBendOperUtil & utils, MbCartPoint3D * indentHotPointPosition, double indent,
@@ -3708,10 +3708,10 @@ bool ShMtBend::GetIndentDimensionParameters( const HotPointBendOperUtil & utils,
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ С€РёСЂРёРЅС‹ СЃРіРёР±Р°
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param pHotPoints - С…РѕС‚-С‚РѕС‡РµРєРё РѕРїРµСЂР°С†РёРё
+Обновить размер ширины сгиба
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
+\param pHotPoints - хот-точеки операции
 */
 //---
 void ShMtBend::UpdateWidthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3743,7 +3743,7 @@ void ShMtBend::UpdateWidthDimension( const SFDPArray<GenerativeDimensionDescript
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° С€РёСЂРёРЅС‹ СЃРіРёР±Р°
+Получить параметры размера ширины сгиба
 */
 //---
 bool ShMtBend::GetWidthDimensionParameters( const HotPointBendOperUtil & utils, MbCartPoint3D * widthHotPointPosition,
@@ -3787,9 +3787,9 @@ bool ShMtBend::GetWidthDimensionParameters( const HotPointBendOperUtil & utils, 
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЃРјРµС‰РµРЅРёРµ СЃРіРёР±Р°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
+Обновить размер смещение сгиба
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
 */
 //---
 void ShMtBend::UpdateDeepnessDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3818,7 +3818,7 @@ void ShMtBend::UpdateDeepnessDimension( const SFDPArray<GenerativeDimensionDescr
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЃРјРµС‰РµРЅРёРµ СЃРіРёР±Р°
+Получить параметры размера смещение сгиба
 */
 //---
 bool ShMtBend::GetDeepnessDimensionParameters( const HotPointBendOperUtil & utils, MbPlacement3D & dimensionPlacement,
@@ -3861,11 +3861,11 @@ bool ShMtBend::GetDeepnessDimensionParameters( const HotPointBendOperUtil & util
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР° СЃРіРёР±Р° ( РёР»Рё РґРµС‡РµСЂРЅРµРіРѕ СЃРіРёР±Р° )
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionId - id СЂР°Р·РјРµСЂР° СЂР°РґРёСѓСЃР°
-\param moveToExternal - СЃРјРµСЃС‚РёС‚СЊ РЅР° РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ
+Обновить размер радиуса сгиба ( или дечернего сгиба )
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
+\param dimensionId - id размера радиуса
+\param moveToExternal - сместить на внешний радиус
 */
 //---
 void ShMtBend::UpdateRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3895,8 +3895,8 @@ void ShMtBend::UpdateRadiusDimension( const SFDPArray<GenerativeDimensionDescrip
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°РґРёСѓСЃР° СЃРіРёР±Р° ( РёР»Рё РґРµС‡РµСЂРЅРµРіРѕ СЃРіРёР±Р° )
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера радиуса сгиба ( или дечернего сгиба )
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetRadiusDimensionParameters( const HotPointBendOperUtil & utils, bool moveToExternal,
@@ -3905,10 +3905,10 @@ bool ShMtBend::GetRadiusDimensionParameters( const HotPointBendOperUtil & utils,
   if ( (utils.m_pDeepness == nullptr) || (utils.m_pRadius == nullptr) || (utils.m_pAngle == nullptr) )
     return false;
 
-  // РІР°Р¶РµРЅ РїРѕСЂСЏРґРѕРє
+  // важен порядок
   MbArc3D arc( utils.m_pRadius->m_pPoint, utils.m_pAngle->m_pPoint, utils.m_pDeepness->m_pPoint, 1, true );
 
-  // РїРµСЂРµРјРµС‰РµРЅРёРµ РЅР° РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ
+  // перемещение на внешний радиус
   if ( moveToExternal )
   {
     arc.SetRadiusA( arc.GetRadiusA() + m_params.m_thickness );
@@ -3930,9 +3930,9 @@ bool ShMtBend::GetRadiusDimensionParameters( const HotPointBendOperUtil & utils,
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅС‹ СЃРіРёР±Р°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
+Обновить размер длины сгиба
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
 */
 //---
 void ShMtBend::UpdateLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -3976,10 +3976,10 @@ void ShMtBend::UpdateLengthDimension( const SFDPArray<GenerativeDimensionDescrip
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅС‹ СЃРіРёР±Р°
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param isLeftSide - СЂР°СЃС‡РµС‚ РґР»СЏ Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅС‹ СЃРіРёР±Р°? РРЅР°С‡Рµ РґР»СЏ РїСЂР°РІРѕР№.
+Обновить размер длины сгиба
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
+\param isLeftSide - расчет для левой стороны сгиба? Иначе для правой.
 */
 //---
 void ShMtBend::UpdateSideLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -4009,7 +4009,7 @@ void ShMtBend::UpdateSideLengthDimension( const SFDPArray<GenerativeDimensionDes
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ СЃРіРёР±Р°
+Получить параметры размера длины сгиба
 */
 //---
 bool ShMtBend::GetSideLengthDimensionParameters( const HotPointBendOperUtil & utils, bool isLeftSide,
@@ -4066,12 +4066,12 @@ bool ShMtBend::GetSideLengthDimensionParameters( const HotPointBendOperUtil & ut
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionPlacement - РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера длины по касанию
+\param utils - параметры хот-точек
+\param dimensionPlacement - местоположение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetLengthDimensionParametersByTouch( const HotPointBendOperUtil & utils,
@@ -4094,12 +4094,12 @@ bool ShMtBend::GetLengthDimensionParametersByTouch( const HotPointBendOperUtil &
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєР°СЃР°РЅРёСЋ РїСЂРё СѓРіР»Рµ Р±РѕР»СЊС€Рµ 90
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionPlacement - РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера длины по касанию при угле больше 90
+\param utils - параметры хот-точек
+\param dimensionPlacement - местоположение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetLengthDimensionObtuseAngle( const HotPointBendOperUtil & utils,
@@ -4160,12 +4160,12 @@ bool ShMtBend::GetLengthDimensionObtuseAngle( const HotPointBendOperUtil & utils
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РєРѕРЅС‚СѓСЂСѓ
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param pDimensionPlacement - РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param pDimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param pDimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕРґСЃС‡РёС‚Р°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера длины по контуру
+\param pUtils - параметры хот-точек
+\param pDimensionPlacement - местоположение размера
+\param pDimensionPoint1 - точка 1 размера
+\param pDimensionPoint2 - точка 2 размера
+\return удалось ли подсчитать параметры размера
 */
 //---
 bool ShMtBend::GetLengthDimensionParametersByContour( const HotPointBendOperUtil & utils,
@@ -4227,12 +4227,12 @@ bool ShMtBend::GetLengthDimensionParametersByContour( const HotPointBendOperUtil
 
 //------------------------------------------------------------------------------
 /**
-РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РїСЂРѕРґРѕР»Р¶РµРЅРёСЋ
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionPlacement - РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+получить параметры размера длины по продолжению
+\param utils - параметры хот-точек
+\param dimensionPlacement - местоположение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetLengthDimensionParametersByContinue( const HotPointBendOperUtil & utils,
@@ -4270,8 +4270,8 @@ bool ShMtBend::GetLengthDimensionParametersByContinue( const HotPointBendOperUti
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РґР»РёРЅС‹ РїРѕ РїСЂРѕРґРѕР»Р¶РµРЅРёСЋ СЃР»РµРІР°/СЃРїСЂР°РІР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера длины по продолжению слева/справа
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetSideLengthDimensionParametersByContinue( const HotPointBendOperUtil & utils,
@@ -4318,8 +4318,8 @@ bool ShMtBend::GetSideLengthDimensionParametersByContinue( const HotPointBendOpe
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕРґСЃС‡РёС‚Р°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размера продолжения сгиба слева/справа
+\return удалось ли подсчитать параметры размера
 */
 //---
 bool ShMtBend::GetSideLengthDimensionParametersByContour( const HotPointBendOperUtil & utils,
@@ -4394,8 +4394,8 @@ bool ShMtBend::GetSideLengthDimensionParametersByContour( const HotPointBendOper
 
 //--------------------------------------------------------------------------------
 /**
-Р Р°СЃС‡РµС‚ РїР°СЂР°РјРµС‚СЂРѕРІ СЂР°Р·РјРµСЂР° РґР»СЏ Р±РѕРєРѕРІРѕР№ РґР»РёРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±СЋ РїРѕ РєР°СЃР°РЅРёСЋ
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕРґСЃС‡РёС‚Р°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Расчет параметров размера для боковой длины продолжения сгибю по касанию
+\return удалось ли подсчитать параметры размера
 */
 //---
 bool ShMtBend::GetSideLengthDimensionParametersByTouch( const HotPointBendOperUtil & utils,
@@ -4405,18 +4405,18 @@ bool ShMtBend::GetSideLengthDimensionParametersByTouch( const HotPointBendOperUt
   bool                  isInternal,
   bool                  isLeftSide ) const
 {
-  // РќР° СЃР°РјРѕРј РґРµР»Рµ РѕС‚Р»РёС‡РёР№ РІ РєРѕРґРµ РѕС‚ СЂР°СЃС‡РµС‚Р° "РїРѕ РєРѕРЅС‚СѓСЂСѓ" РЅРёРєР°РєРёС…, РїРѕСЌС‚РѕРјСѓ РІС‹Р·С‹РІР°РµРј С„СѓРЅРєС†РёСЋ РґР»СЏ РЅРµРіРѕ
-  // Р Р°Р·РЅРёС†Р° РІРЅСѓС‚СЂРё: РІ pUtils, РІ СЂР°СЃС‡РµС‚Рµ РєРѕРЅРµС‡РЅРѕР№ С‚РѕС‡РєРё.
+  // На самом деле отличий в коде от расчета "по контуру" никаких, поэтому вызываем функцию для него
+  // Разница внутри: в pUtils, в расчете конечной точки.
   return GetSideLengthDimensionParametersByContour( utils, dimensionPlacement, dimensionPoint1, dimensionPoint2, isInternal, isLeftSide );
 }
 
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РєР°СЃР°С‚РµР»СЊРЅСѓСЋ Рє РґСѓРіРµ РІ С‚РѕС‡РєРµ
-\param pSupportArc - РґСѓРіР° РїСЂРѕС…РѕРґСЏС‰Р°СЏ С‡РµСЂРµР· С…РѕС‚-С‚РѕС‡РєРё
-\param pPointOnArc - С‚РѕС‡РєР° РЅР° РґСѓРіРµ (Р±Р»РёР¶Р°Р№С€Р°СЏ РїСЂРѕРµРєС†РёСЏ)
-\param pTangent - РєР°СЃР°С‚РµР»СЊРЅР°СЏ
+Получить касательную к дуге в точке
+\param pSupportArc - дуга проходящая через хот-точки
+\param pPointOnArc - точка на дуге (ближайшая проекция)
+\param pTangent - касательная
 */
 //---
 void ShMtBend::GetArcTangent( const MbArc3D & pSupportArc,
@@ -4436,9 +4436,9 @@ void ShMtBend::GetArcTangent( const MbArc3D & pSupportArc,
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р° СЃРіРёР±Р°
-\param dimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
+Обновить размер угла сгиба
+\param dimensions - размеры операции
+\param utils - параметры хот-точек
 */
 //---
 void ShMtBend::UpdateAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -4472,12 +4472,12 @@ void ShMtBend::UpdateAngleDimension( const SFDPArray<GenerativeDimensionDescript
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂС‹ РЈРіРѕР», С‚РёРї РґРѕРїРѕР»РЅСЏСЋС‰РёР№
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionCenter - С†РµРЅС‚СЂ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размеры Угол, тип дополняющий
+\param utils - параметры хот-точек
+\param dimensionCenter - центр размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetAngleDimensionSupplementary( const HotPointBendOperUtil & utils,
@@ -4517,12 +4517,12 @@ bool ShMtBend::GetAngleDimensionSupplementary( const HotPointBendOperUtil & util
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂС‹ РЈРіРѕР», С‚РёРї - СѓРіРѕР» СЃРіРёР±Р°
-\param utils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
-\param dimensionCenter - С†РµРЅС‚СЂ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Получить параметры размеры Угол, тип - угол сгиба
+\param utils - параметры хот-точек
+\param dimensionCenter - центр размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetAngleDimensionBend( const HotPointBendOperUtil & utils,
@@ -4565,8 +4565,8 @@ bool ShMtBend::GetAngleDimensionBend( const HotPointBendOperUtil & utils,
 
 //--------------------------------------------------------------------------------
 /**
-Р’С‹С‡РёСЃР»РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЃРјРµС‰РµРЅРёСЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
-\return СѓРґР°Р»РѕСЃСЊ Р»Рё РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР°
+Вычислить параметры размера смещения относительно опорного объекта для продолжения сгиба слева/справа
+\return удалось ли получить параметры размера
 */
 //---
 bool ShMtBend::GetSideObjectOffsetDimensionParameters( const HotPointBendOperUtil & pUtils,
@@ -4600,7 +4600,7 @@ bool ShMtBend::GetSideObjectOffsetDimensionParameters( const HotPointBendOperUti
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЃРјРµС‰РµРЅРёСЏ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РґР»СЏ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р° СЃР»РµРІР°/СЃРїСЂР°РІР°
+Обновить размер смещения относительно опорного объекта для продолжения сгиба слева/справа
 */
 //---
 void ShMtBend::UpdateSideObjectOffsetDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -4635,10 +4635,10 @@ void ShMtBend::UpdateSideObjectOffsetDimension( const SFDPArray<GenerativeDimens
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+// Пересчитать местоположение хот-точек
 /**
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoints - хот-точки
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 void ShMtBend::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
@@ -4648,7 +4648,7 @@ void ShMtBend::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   {
     bool del = true;
 
-    // РҐРѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР° РѕС‚РѕР±СЂР°Р¶Р°РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃРіРёР± РІС‹РїРѕР»РЅРµРЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј СЃР°РјРѕРіРѕ СЃРіРёР±Р°
+    // Хот-точку радиуса отображаем только если сгиб выполнен по параметрам самого сгиба
     if ( !children.m_byOwner )
     {
       MbBendByEdgeValues params;
@@ -4661,7 +4661,7 @@ void ShMtBend::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
         for ( size_t i = 0, c = hotPoints.Count(); i < c; i++ )
         {
           HotPointParam * hotPoint = hotPoints[i];
-          if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+          if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // радиус сгиба
           {
             HotPointBendRadiusParam * hotPointBend = (HotPointBendRadiusParam *)hotPoint;
             hotPointBend->params = params;
@@ -4680,12 +4680,12 @@ void ShMtBend::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
       }
   }
 }
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 
 
 //--------------------------------------------------------------------------------
 /**
-Р§С‚РµРЅРёРµ РёР· РїРѕС‚РѕРєР°
+Чтение из потока
 \param in
 \param obj
 \return void
@@ -4697,11 +4697,11 @@ void ShMtBend::Read( reader &in, ShMtBend * obj )
 
   if ( in.AppVersion() >= 0x10000004L )
   {
-    // РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ РґР»СЏ Р·Р°РґР°РЅРёСЏ РґР»РёРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+    // опорные объекты для задания длины продолжения сгиба
     in >> obj->m_refObjects;
   }
 
-  in >> obj->m_params;  // РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё СЃРіРёР±Р°
+  in >> obj->m_params;  // параметры операции сгиба
 
   if ( in.AppVersion() >= 0x1100003FL )
     in >> obj->m_typeCircuitBend;
@@ -4710,7 +4710,7 @@ void ShMtBend::Read( reader &in, ShMtBend * obj )
 
 //--------------------------------------------------------------------------------
 /**
-Р—Р°РїРёСЃСЊ РІ РїРѕС‚РѕРє
+Запись в поток
 \param out
 \param obj
 \return void
@@ -4719,18 +4719,18 @@ void ShMtBend::Read( reader &in, ShMtBend * obj )
 void ShMtBend::Write( writer &out, const ShMtBend * obj )
 {
   if ( out.AppVersion() < 0x06000033L )
-    out.setState( io::cantWriteObject ); // РќРµ РїРёС€РµРј РІ СЃС‚Р°СЂС‹Рµ РІРµСЂСЃРёРё
+    out.setState( io::cantWriteObject ); // Не пишем в старые версии
   else
   {
     WriteBase( out, (const ShMtBaseBend *)obj );
 
     if ( out.AppVersion() >= 0x10000004L )
     {
-      // РћРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ РґР»СЏ Р·Р°РґР°РЅРёСЏ РґР»РёРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+      // Опорные объекты для задания длины продолжения сгиба
       out << obj->m_refObjects;
     }
 
-    out << obj->m_params;  // РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё СЃРіРёР±Р°
+    out << obj->m_params;  // параметры операции сгиба
 
     if ( out.AppVersion() >= 0x1100003FL )
       out << obj->m_typeCircuitBend;
@@ -4740,7 +4740,7 @@ void ShMtBend::Write( writer &out, const ShMtBend * obj )
 
 //--------------------------------------------------------------------------------
 /**
-Р”РµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ С‡С‚РµРЅРёСЏ
+Действия после чтения
 \param prr
 \return void
 */
@@ -4765,7 +4765,7 @@ void ShMtBend::AdditionalReadingEnd( PartRebuildResult & prr )
 
 //--------------------------------------------------------------------------------
 /**
-РќРµРѕР±С…РѕРґРёРјРѕ Р»Рё СЃРѕС…СЂР°РЅРµРЅРёРµ Р±РµР· РёСЃС‚РѕСЂРёРё
+Необходимо ли сохранение без истории
 \param version
 \return bool
 */
@@ -4784,11 +4784,11 @@ bool ShMtBend::IsNeedSaveAsUnhistored( long version ) const
       double len2 = 0.0;
       m_params.m_sideRight.m_length.GetValue( len2 );
       if ( ::abs( len1 - len2 ) <= Math::paramDeltaMin )
-        return false; // СѓР¶Рµ СЃРѕС…СЂР°РЅРёР»Рё СЃ РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°РЅРёРµРј
+        return false; // уже сохранили с конвертированием
     }
 
-    // РЎСЋРґР° РјС‹ РїРѕРїР°Р»Рё, РєРѕРіРґР° РЅРµ СЃРјРѕРіР»Рё РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РІ СЃС‚Р°СЂСѓСЋ РІРµСЂСЃРёСЋ.
-    // РЎРѕС…СЂР°РЅСЏРµРј Р±РµР· РёСЃС‚РѕСЂРёРё.
+    // Сюда мы попали, когда не смогли конвертировать в старую версию.
+    // Сохраняем без истории.
     return true;
   }
 
@@ -4804,7 +4804,7 @@ bool ShMtBend::IsNeedSaveAsUnhistored( long version ) const
 
 //--------------------------------------------------------------------------------
 /**
-РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚
+Установить опорный объект
 \param wrapper
 \param index
 \return void
@@ -4818,7 +4818,7 @@ void ShMtBend::SetRefObject( const WrapSomething * wrapper, size_t index )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РѕРїРѕСЂРЅС‹Р№ РѕР±СЉРµРєС‚
+Получить опорный объект
 \param index
 \return const WrapSomething &
 */
@@ -4831,7 +4831,7 @@ const WrapSomething & ShMtBend::GetRefObject( size_t index ) const
 
 //--------------------------------------------------------------------------------
 /**
-Р Р°СЃСЃС‡РёС‚Р°С‚СЊ СЂР°СЃСЃС‚РѕСЏРЅРёРµ РґРѕ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р° РґР»СЏ СЃС‚РѕСЂРѕРЅС‹ СЃРіРёР±Р° СЃ СѓС‡РµС‚РѕРј СЃРјРµС‰РµРЅРёСЏ
+Рассчитать расстояние до опорного объекта для стороны сгиба с учетом смещения
 \param utils
 \param isLeftSide
 \param length
@@ -4840,22 +4840,22 @@ const WrapSomething & ShMtBend::GetRefObject( size_t index ) const
 //---
 const bool ShMtBend::CalculateSideLengthToObject( HotPointBendOperUtil & utils, bool isLeftSide, double & length )
 {
-  MbCartPoint3D endPoint; // РљРѕРЅРµС‡РЅР°СЏ С‚РѕС‡РєР° СЃРіРёР±Р°
-  MbVector3D    axisVec;  // РћСЃРµРІРѕР№ РІРµРєС‚РѕСЂ
+  MbCartPoint3D endPoint; // Конечная точка сгиба
+  MbVector3D    axisVec;  // Осевой вектор
   MbCartPoint3D cp;
   if ( utils.CalculateSideObjectOffsetParams( cp, endPoint, axisVec, m_params, isLeftSide ) )
   {
     MbCartPoint3D originPoint;
     utils.GetSideLengthOriginPoint( originPoint, m_params.m_bendLengthBy2Sides, isLeftSide );
 
-    // РџРѕСЃС‚СЂРѕРµРЅРёРµ СЂР°Р·РґРµР»СЏСЋС‰РµР№ РїР»РѕСЃРєРѕСЃС‚Рё
+    // Построение разделяющей плоскости
     MbPlacement3D _place( originPoint, axisVec );
     MbPlane dividingPlane( _place );
 
     MbeItemLocation placementRes = dividingPlane.PointRelative( endPoint, ANGLE_EPSILON );
     double movedVertexDist = originPoint.DistanceToPoint( endPoint );
 
-    // РџРѕРґС…РѕРґРёС‚ С‚РѕР»СЊРєРѕ РµСЃР»Рё С‚РѕС‡РєР° РЅР°С…РѕРґРёС‚СЃСЏ "РЅР°Рґ" РёР»Рё "РІ" РїР»РѕСЃРєРѕСЃС‚Рё СЃРіРёР±Р°
+    // Подходит только если точка находится "над" или "в" плоскости сгиба
     bool positiveDist = (placementRes == MbeItemLocation::iloc_InItem || placementRes == MbeItemLocation::iloc_OnItem);
     if ( !positiveDist )
       movedVertexDist = -movedVertexDist;
@@ -4863,7 +4863,7 @@ const bool ShMtBend::CalculateSideLengthToObject( HotPointBendOperUtil & utils, 
     return length >= 0;
   }
 
-  // РЎС‚Р°РІРёРј РѕС‚СЂРёС†Р°С‚РµР»СЊРЅСѓСЋ РґР»РёРЅСѓ: СЂР°СЃС‡РµС‚ РЅРµ СѓРґР°Р»СЃСЏ
+  // Ставим отрицательную длину: расчет не удался
   length = -1;
   return false;
 }
@@ -4871,51 +4871,51 @@ const bool ShMtBend::CalculateSideLengthToObject( HotPointBendOperUtil & utils, 
 
 //------------------------------------------------------------------------------
 /**
-РљРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РІРµСЂСЃРёСЋ 5.11
+Конвертировать для сохранения в версию 5.11
 */
 //---
 void ShMtBend::ConvertTo5_11( IfCanConvert & owner, const WritingParms & wrParms )
 {
-  // РЎСЋРґР° РЅРµ РїРѕРїР°РґР°РµРј: РґР°Р¶Рµ Р±Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РЅРµ СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РІ 5.11
+  // Сюда не попадаем: даже базовый класс не сохраняется в 5.11
 }
 
 
 //------------------------------------------------------------------------------
 /**
-РљРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РїСЂРµРґС‹РґСѓСЋС‰СѓСЋ РІРµСЂСЃРёСЋ
+Конвертировать для сохранения в предыдующую версию
 */
 //---
 void ShMtBend::ConvertToSavePrevious( SaveDocumentVersion saveMode, IfCanConvert & owner, const WritingParms & wrParms )
 {
   if ( m_params.m_bendLengthBy2Sides )
   {
-    // РџСЂРµРґРїРѕР»Р°РіР°РµРј, С‡С‚Рѕ РѕР±Рµ РґР»РёРЅС‹ Р·Р°РґР°РЅС‹ Р°Р±СЃРѕР»СЋС‚РЅРѕ Рё РїР°СЂР°РјРµС‚СЂРёС‡РµСЃРєРё СЂР°РІРЅС‹.
-    // Р’ РїСЂРѕС‚РёРІРЅРѕРј СЃР»СѓС‡Р°Рµ РґР°РЅРЅР°СЏ РєРѕРЅРІРµСЂС‚Р°С†РёСЏ Р±СѓРґРµС‚ РѕС€РёР±РѕС‡РЅР°.
+    // Предполагаем, что обе длины заданы абсолютно и параметрически равны.
+    // В противном случае данная конвертация будет ошибочна.
     m_params.m_bendLengthBy2Sides = false;
-    // Р”Р»РёРЅР° РїСЂР°РІРёР»СЊРЅР°СЏ, РјРµСЃС‚Рѕ РѕС‚СЃС‡РµС‚Р° РґР»РёРЅС‹ РјРѕР¶РЅРѕ РѕСЃС‚Р°РІРёС‚СЊ.
+    // Длина правильная, место отсчета длины можно оставить.
   }
   else
   {
     if ( m_params.m_sideLeft.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute )
     {
       m_params.m_sideLeft.m_lengthCalcMethod = ShMtBendSide::LengthCalcMethod::lcm_absolute;
-      // Р’Р°Р¶РЅРѕ! РЎС‚Р°РІРёРј С‚РёРї Р·Р°РґР°РЅРёСЏ РґР»РёРЅС‹ РѕС‚ РєРѕРЅС†Р° РґСѓРіРё РјРµСЃС‚Р° СЃРіРёР±Р° (СѓРјРѕР»С‡Р°С‚РµР»СЊРЅС‹Р№)
-      // Р’ РїСЂРѕС‚РёРІРЅРѕРј СЃР»СѓС‡Р°Рµ РїСЂРё РїРµСЂРµСЃС‚СЂРѕРµРЅРёРё РїСЂРѕРґРѕР»Р¶РµРЅРёРµ РјРѕР¶РµС‚ РёР·РјРµРЅРёС‚СЊСЃСЏ РїРѕ РґР»РёРЅРµ.
+      // Важно! Ставим тип задания длины от конца дуги места сгиба (умолчательный)
+      // В противном случае при перестроении продолжение может измениться по длине.
       m_params.m_sideLeft.m_absLengthType = ShMtBendSide::alt_byContinue;
     }
   }
   // KOMPAS-23638   BEGIN
   if ( saveMode < SaveDocumentVersion::sdv_Kompas_18
     && m_params.m_typeRemoval == ShMtBaseBendParameters::tr_byCentre )
-  {                                     // РёР·РјРµРЅРёС‚СЊ СЃРїРѕСЃРѕР± СЂР°Р·РјРµС‰РµРЅРёСЏ "РџРѕ Р»РёРЅРёРё СЃРіРёР±Р°" РЅР° "РЎРјРµС‰РµРЅРёРµ РІРЅСѓС‚СЂСЊ"
+  {                                     // изменить способ размещения "По линии сгиба" на "Смещение внутрь"
     m_params.m_typeRemoval = ShMtBaseBendParameters::tr_byIn;
 
-    MbBendValues mbParams;              // РїРѕР»СѓС‡РёС‚СЊ РѕР±С‰РёР№ РґР»СЏ РІСЃРµС… РїРѕРґСЃРіРёР±РѕРІ СЂР°РґРёСѓСЃ
+    MbBendValues mbParams;              // получить общий для всех подсгибов радиус
     ((ShMtBaseBendParameters)m_params).GetValues( mbParams );
 
-    IFC_Array<ShMtBendObject> children; // РїРѕР»СѓС‡РёС‚СЊ РїРѕРґСЃРіРёР±С‹
+    IFC_Array<ShMtBendObject> children; // получить подсгибы
     GetChildrens( children );
-    if ( children.Count() )             // KOMPAS-23920: РїРѕРґРјРµРЅРёС‚СЊ РѕР±С‰РёР№ СЂР°РґРёСѓСЃ СЂР°РґРёСѓСЃРѕРј РїРµСЂРІРѕРіРѕ РїРѕРґСЃРіРёР±Р°
+    if ( children.Count() )             // KOMPAS-23920: подменить общий радиус радиусом первого подсгиба
       mbParams.radius = children[0]->GetAbsRadius();
 
     MbDisplacementCalculator dCalc( m_params.m_thickness, mbParams.radius, mbParams.angle, mbParams.k );
@@ -4932,36 +4932,36 @@ IfCanConvert * ShMtBend::CreateConverter( IfCanConvert & what )
 
 //------------------------------------------------------------------------------
 /**
-РЎР»РµРґСѓРµС‚ Р»Рё РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РІРµСЂСЃРёСЋ 5.11
+Следует ли конвертировать для сохранения в версию 5.11
 */
 //---
 bool ShMtBend::IsNeedConvertTo5_11( SSArray<uint> & types, IfCanConvert & owner )
 {
-  // Р’ 5.11 РІРѕРѕР±С‰Рµ СЃРіРёР±С‹ РЅРµ СЃРѕС…СЂР°РЅСЏСЋС‚СЃСЏ
+  // В 5.11 вообще сгибы не сохраняются
   return false;
 }
 
 
 //------------------------------------------------------------------------------
 /**
-РЎР»РµРґСѓРµС‚ Р»Рё РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ РїСЂРµРґС‹РґСѓСЋС‰СѓСЋ РІРµСЂСЃРёСЋ
+Следует ли конвертировать для сохранения в предыдующую версию
 */
 //---
 bool ShMtBend::IsNeedConvertToSavePrevious( SSArray<uint> & types, SaveDocumentVersion saveMode, IfCanConvert & owner )
 {
-  bool shouldConvert = false; // РњРѕР¶РЅРѕ (Рё РЅСѓР¶РЅРѕ) Р»Рё РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РІ СЃС‚Р°СЂСѓСЋ РІРµСЂСЃРёСЋ?
+  bool shouldConvert = false; // Можно (и нужно) ли конвертировать в старую версию?
   if ( saveMode <= SaveDocumentVersion::sdv_Kompas_15_Sp2 )
   {
-    // РќР°Рј РЅСѓР¶РЅРѕ РєРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ, РЅРѕ РјРѕР¶РµРј Р»Рё РјС‹?
-    // РљРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РІ СЃС‚Р°СЂСѓСЋ РІРµСЂСЃРёСЋ РјРѕР¶РЅРѕ Р±СѓРґРµС‚ РїСЂРё СѓСЃР»РѕРІРёРё, С‡С‚Рѕ Сѓ РЅР°СЃ СЂР°РІРЅРѕР±РѕРєРёР№ СЃРіРёР± (РЅРµ РїРѕ 2-Рј СЃС‚РѕСЂРѕРЅР°Рј),
-    // Р»РёР±Рѕ РѕР±Рµ СЃС‚РѕСЂРѕРЅС‹ СЌРєРІРёРІР°Р»РµРЅС‚РЅС‹, РїСЂРё СЌС‚РѕРј РґР»РёРЅР° Р·Р°РґР°РµС‚СЃСЏ РІ Р°Р±СЃРѕР»СЋС‚РЅРѕР№ С„РѕСЂРјРµ.
-    // РўР°Рє Р¶Рµ Р·РґРµСЃСЊ РІР°Р¶РЅС‹Рј РјРѕРјРµРЅС‚РѕРј СЏРІР»СЏРµС‚СЃСЏ С‚Рѕ, С‡С‚Рѕ СЃРїРѕСЃРѕР± РѕС‚СЃС‡РµС‚Р° РґР»РёРЅС‹ РґРѕР»Р¶РµРЅ СЃРѕРІРїР°РґР°С‚СЊ.
+    // Нам нужно конвертировать, но можем ли мы?
+    // Конвертировать в старую версию можно будет при условии, что у нас равнобокий сгиб (не по 2-м сторонам),
+    // либо обе стороны эквивалентны, при этом длина задается в абсолютной форме.
+    // Так же здесь важным моментом является то, что способ отсчета длины должен совпадать.
     if ( m_params.m_bendLengthBy2Sides &&
       m_params.m_sideLeft.m_lengthCalcMethod == ShMtBendSide::LengthCalcMethod::lcm_absolute &&
       m_params.m_sideRight.m_lengthCalcMethod == ShMtBendSide::LengthCalcMethod::lcm_absolute &&
       m_params.m_sideLeft.m_absLengthType == m_params.m_sideRight.m_absLengthType )
     {
-      // РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё РѕР±Рµ РґР»РёРЅС‹ Р·Р°РґР°СЋС‚СЃСЏ Р°Р±СЃРѕР»СЋС‚РЅРѕ Рё РѕРЅРё РїР°СЂР°РјРµС‚СЂРёС‡РµСЃРєРё СЂР°РІРЅС‹:
+      // Конвертируем только если обе длины задаются абсолютно и они параметрически равны:
       double len1 = 0.0;
       m_params.m_sideLeft.m_length.GetValue( len1 );
       double len2 = 0.0;
@@ -4969,7 +4969,7 @@ bool ShMtBend::IsNeedConvertToSavePrevious( SSArray<uint> & types, SaveDocumentV
       if ( ::abs( len1 - len2 ) <= Math::paramDeltaMin )
         shouldConvert = true;
     }
-    else if ( !m_params.m_bendLengthBy2Sides && m_params.m_sideLeft.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute ) // Р Р°РІРЅРѕР±РѕРєРёР№ СЃРіРёР±
+    else if ( !m_params.m_bendLengthBy2Sides && m_params.m_sideLeft.m_lengthCalcMethod != ShMtBendSide::LengthCalcMethod::lcm_absolute ) // Равнобокий сгиб
       shouldConvert = true;
   }
   // KOMPAS-23638
@@ -4985,21 +4985,21 @@ bool ShMtBend::IsNeedConvertToSavePrevious( SSArray<uint> & types, SaveDocumentV
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕСЃС‡РёС‚Р°С‚СЊ РґР»РёРЅС‹ СЃС‚РѕСЂРѕРЅ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°, РµСЃР»Рё РѕРЅРё Р·Р°РґР°РЅС‹ РЅРµ РІ Р°Р±СЃРѕР»СЋС‚РЅРѕРј РІРёРґРµ
+Посчитать длины сторон продолжения сгиба, если они заданы не в абсолютном виде
 \param params
 \return bool
 */
 //---
 bool ShMtBend::UpdateSideLengthsForNonAbsoluteCalcMode( MbBendByEdgeValues & params )
 {
-  bool suitableParamValues = true; // РЎРіРёР± РјРѕР¶РµС‚ РёСЃРїРѕСЂС‚РёС‚СЊСЃСЏ РІ СЃР»СѓС‡Р°Рµ РєР°РєРёС…-С‚Рѕ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹С… Р·РЅР°С‡РµРЅРёР№, РЅР°РїСЂРёРјРµСЂ,
-                                   // РєРѕРіРґР° РІРµСЂС€РёРЅР° (С‚РѕС‡РєР° РЅР° РїСЂРѕРµРєС†РёРѕРЅРЅРѕР№ РїР»РѕСЃРєРѕСЃС‚Рё) Р±СѓРґРµС‚ РІ РїСЂРѕС‚РёРІРѕРїРѕР»РѕР¶РЅРѕР№ СЃС‚РѕСЂРѕРЅРµ РѕС‚ РЅР°РїСЂР°РІР»РµРЅРёСЏ СЃРіРёР±Р°.
+  bool suitableParamValues = true; // Сгиб может испортиться в случае каких-то некорректных значений, например,
+                                   // когда вершина (точка на проекционной плоскости) будет в противоположной стороне от направления сгиба.
 
   std::auto_ptr<HotPointBendOperUtil> utils( GetHotPointUtil( params,
     m_bendObject.GetObjectTrans( 0 ).editComponent,
     m_bendObjects.Count() ? m_bendObjects[0] : nullptr,
     true ) );
-  // VB Р—РґРµСЃСЊ utils РјРѕР¶РЅРѕ РЅРµ РїСЂРѕРІРµСЂСЏС‚СЊ РЅР° null. Р’С‹С€Рµ РІСЃРµРіРґР° РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ Р±Р°Р·РѕРІРѕРµ СЂРµР±СЂРѕ, РѕС‚ РєРѕС‚РѕСЂРѕРіРѕ РѕРЅРё Р·Р°РІРёСЃСЏС‚.
+  // VB Здесь utils можно не проверять на null. Выше всегда проверяется базовое ребро, от которого они зависят.
   utils->SetLengthBaseObjects( &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_leftSideLengthBaseObject ),
     &m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_rightSideLengthBaseObject ) );
 
@@ -5026,7 +5026,7 @@ bool ShMtBend::UpdateSideLengthsForNonAbsoluteCalcMode( MbBendByEdgeValues & par
 
 //--------------------------------------------------------------------------------
 /**
-Р•СЃС‚СЊ Р»Рё Р·Р°РІРёСЃРёРјРѕСЃС‚СЊ РѕС‚ РїСЂРёСЃР»Р°РЅРЅРѕРіРѕ РѕР±СЉРµРєС‚Р°?
+Есть ли зависимость от присланного объекта?
 \param relType
 \param parent
 \return bool
@@ -5040,15 +5040,15 @@ bool ShMtBend::IsThisParent( uint8 relType, const WrapSomething & parent ) const
 
 //--------------------------------------------------------------------------------
 /**
-РџСЂРѕРІРµСЂРёС‚СЊ, РІС‹Р±СЂР°РЅС‹ Р»Рё РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ РґР»СЏ РЅРµР°Р±СЃРѕР»СЋС‚РЅС‹С… РґР»РёРЅ СЃС‚РѕСЂРѕРЅ СЃРіРёР±Р°
-\return bool Р’СЃРµ Р»Рё РІ РїРѕСЂСЏРґРєРµ СЃ РѕРїРѕСЂРЅС‹РјРё РѕР±СЉРµРєС‚Р°РјРё
+Проверить, выбраны ли опорные объекты для неабсолютных длин сторон сгиба
+\return bool Все ли в порядке с опорными объектами
 */
 //---
 bool ShMtBend::IsValidBaseObjects()
 {
   bool res = true;
 
-  // РџСЂРѕРІРµСЂСЏРµРј Р»РµРІСѓСЋ СЃС‚РѕСЂРѕРЅСѓ
+  // Проверяем левую сторону
   if ( m_params.m_sideLeft.IsLengthDefinedByObject() )
   {
     const WrapSomething & objectWrp = m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_leftSideLengthBaseObject );
@@ -5061,7 +5061,7 @@ bool ShMtBend::IsValidBaseObjects()
     }
   }
 
-  // РџСЂРѕРІРµСЂСЏРµРј РїСЂР°РІСѓСЋ СЃС‚РѕСЂРѕРЅСѓ
+  // Проверяем правую сторону
   if ( m_params.m_bendLengthBy2Sides && m_params.m_sideRight.IsLengthDefinedByObject() )
   {
     const WrapSomething & objectWrp = m_refObjects.GetObjectTrans( IfShMtBend::RefObjIdxs::roi_rightSideLengthBaseObject );
@@ -5080,7 +5080,7 @@ bool ShMtBend::IsValidBaseObjects()
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ РѕР±СЉРµРєС‚Р° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РїР»РѕСЃРєРѕСЃС‚Рё СЃРіРёР±Р°.
+Получить местоположение объекта относительно плоскости сгиба.
 */
 //---
 MbeItemLocation ShMtBend::BendObjectLocation( const WrapSomething & wrap, bool forLeftSide )
@@ -5108,7 +5108,7 @@ MbeItemLocation ShMtBend::BendObjectLocation( const WrapSomething & wrap, bool f
     MbVector3D directionVec;
     utils->GetSideLengthVector( directionVec );
 
-    // РџРѕСЃС‚СЂРѕРµРЅРёРµ СЂР°Р·РґРµР»СЏСЋС‰РµР№ РїР»РѕСЃРєРѕСЃС‚Рё
+    // Построение разделяющей плоскости
     MbPlacement3D _place( originPoint, directionVec );
     MbPlane dividingPlane( _place );
 
@@ -5128,15 +5128,15 @@ MbeItemLocation ShMtBend::BendObjectLocation( const WrapSomething & wrap, bool f
     MbVector3D directionVec;
     utils->GetSideLengthVector( directionVec );
 
-    // РћР±СЏР·Р°С‚РµР»СЊРЅР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ
+    // Обязательная инициализация
     double projX( UNDEFINED_DBL ), projY( UNDEFINED_DBL );
     if ( planePlacement.DirectPointProjection( originPoint, directionVec, projX, projY ) )
     {
-      // РЎРїСЂРѕРµС†РёСЂРѕРІР°Р»Рё, РЅРѕ РІРѕС‚ РІРѕРїСЂРѕСЃ: СЃ РЅСѓР¶РЅРѕР№ Р»Рё СЃС‚РѕСЂРѕРЅС‹ РѕС‚ РЅР°С‡Р°Р»Р° СЃРіРёР±Р° РїРѕР»СѓС‡РёР»Р°СЃСЊ РїСЂРѕРµРєС†РёСЏ?
+      // Спроецировали, но вот вопрос: с нужной ли стороны от начала сгиба получилась проекция?
       MbCartPoint3D projectedPoint;
       planePlacement.PointOn( projX, projY, projectedPoint );
 
-      // РџРѕСЃС‚СЂРѕРµРЅРёРµ СЂР°Р·РґРµР»СЏСЋС‰РµР№ РїР»РѕСЃРєРѕСЃС‚Рё
+      // Построение разделяющей плоскости
       MbPlacement3D _place( originPoint, directionVec );
       MbPlane dividingPlane( _place );
 
@@ -5150,7 +5150,7 @@ MbeItemLocation ShMtBend::BendObjectLocation( const WrapSomething & wrap, bool f
 
 //--------------------------------------------------------------------------------
 /**
-РќСѓР¶РЅРѕ Р»Рё РёРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ РЅР°РїСЂР°РІР»РµРЅРёСЏ СЃРіРёР±Р° РёР·-Р·Р° РїРѕР»РѕР»Р¶РµРЅРёСЏ РѕРїРѕСЂРЅРѕРіРѕ РѕР±СЉРµРєС‚Р°, РґРѕ РєРѕС‚РѕСЂРѕРіРѕ СЃС‚СЂРѕРёРј СЃРіРёР±.
+Нужно ли инвертировать направления сгиба из-за пололжения опорного объекта, до которого строим сгиб.
 */
 //---
 bool ShMtBend::IsNeedInvertDirectionBend()
@@ -5167,14 +5167,14 @@ bool ShMtBend::IsNeedInvertDirectionBend()
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РєР°Рє РѕРїРѕСЂРЅСѓСЋ РІРµСЂС€РёРЅСѓ?
+Можно ли использовать данный объект как опорную вершину?
 \param pointWrapper
 \return const bool
 */
 //---
 const bool ShMtBend::IsObjectSuitableAsBaseVertex( const WrapSomething & pointWrapper )
 {
-  MbeItemLocation location = IFPTR( AnyPoint )(pointWrapper.obj) ? BendObjectLocation( pointWrapper, true/*РўСѓС‚ РІСЃРµ СЂР°РІРЅРѕ*/ ) : MbeItemLocation::iloc_Undefined;
+  MbeItemLocation location = IFPTR( AnyPoint )(pointWrapper.obj) ? BendObjectLocation( pointWrapper, true/*Тут все равно*/ ) : MbeItemLocation::iloc_Undefined;
 
   return location == MbeItemLocation::iloc_InItem || location == MbeItemLocation::iloc_OutOfItem;
 }
@@ -5182,7 +5182,7 @@ const bool ShMtBend::IsObjectSuitableAsBaseVertex( const WrapSomething & pointWr
 
 //--------------------------------------------------------------------------------
 /**
-РњРѕР¶РЅРѕ Р»Рё РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР°РЅРЅС‹Р№ РѕР±СЉРµРєС‚ РєР°Рє РѕРїРѕСЂРЅСѓСЋ РїР»РѕСЃРєРѕСЃС‚СЊ?
+Можно ли использовать данный объект как опорную плоскость?
 \param pointWrapper
 \return const bool
 */
@@ -5197,7 +5197,7 @@ const bool ShMtBend::IsObjectSuitableAsBasePlane( const WrapSomething & planeWra
 
 //--------------------------------------------------------------------------------
 /**
-РСЃРїСЂР°РІРёС‚СЊ РїР°СЂР°РјРµС‚СЂ РґР»РёРЅС‹ СЃС‚РѕСЂРѕРЅС‹ РїСЂРѕРґРѕР»Р¶РµРЅРёСЏ СЃРіРёР±Р°
+Исправить параметр длины стороны продолжения сгиба
 \param isLeftSide
 \return void
 */
@@ -5212,8 +5212,8 @@ void ShMtBend::FixAbsSideLength( bool isLeftSide )
 
 //--------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РІСЃРµ РєРѕРЅС‚РµР№РЅРµСЂС‹ СЃСЃС‹Р»РѕРє Сѓ РѕРїРµСЂР°С†РёРё
-\param refContainers РљРѕРЅС‚РµР№РЅРµСЂС‹ СЃСЃС‹Р»РѕРє РѕРїРµСЂР°С†РёРё
+Получить все контейнеры ссылок у операции
+\param refContainers Контейнеры ссылок операции
 \return void
 */
 //---
@@ -5226,7 +5226,7 @@ void ShMtBend::GetRefContainers( FDPArray<AbsReferenceContainer> & refContainers
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// РљР»Р°СЃСЃ РѕРїРµСЂР°С†РёРё СЃРіРёР± РїРѕ Р»РёРЅРёРё
+// Класс операции сгиб по линии
 //
 ////////////////////////////////////////////////////////////////////////////////
 class ShMtBaseBendLine : public IfShMtBendLine,
@@ -5234,7 +5234,7 @@ class ShMtBaseBendLine : public IfShMtBendLine,
   public IfHotPoints
 {
 public:
-  ReferenceContainer      m_bendFaces;      // РіСЂР°РЅРё РєРѕС‚РѕСЂС‹Рµ РіРЅРµРј
+  ReferenceContainer      m_bendFaces;      // грани которые гнем
 
 public:
   ShMtBaseBendLine( IfUniqueName * un );
@@ -5250,9 +5250,9 @@ public:
   virtual void                              SetBendObject( const WrapSomething * ) override;
   virtual const WrapSomething &             GetBendObject() const override;
   virtual bool                              SetResetBendFace( const WrapSomething & ) override;
-  virtual void                              ResetAllBendFace() override; // СѓРґР°Р»РёС‚СЊ РІСЃРµ face РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
-  virtual size_t                            GetBendFaceCount() const override; // Рє-РІРѕ faces РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
-  virtual WrapSomething *                   GetBendFace( uint i ) override; // i - face РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
+  virtual void                              ResetAllBendFace() override; // удалить все face который гнем
+  virtual size_t                            GetBendFaceCount() const override; // к-во faces который гнем
+  virtual WrapSomething *                   GetBendFace( uint i ) override; // i - face который гнем
   virtual const WrapSomething *             GetBendFace( uint i ) const override;
   virtual SArray<WrapSomething>             GetBaseFaces() const override;
 #ifdef MANY_THICKNESS_BODY_SHMT
@@ -5261,71 +5261,71 @@ public:
   virtual bool                              IsSuitedObject( const WrapSomething &, double ) override;
 #endif
   virtual bool                              IsLeftSideFix() = 0;
-  //--------------- РѕР±С‰РёРµ С„СѓРЅРєС†РёРё РѕР±СЉРµРєС‚Р° РґРµС‚Р°Р»Рё -------------------------------//
-  virtual void            Assign( const PrObject &other ) override;           // СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ РґСЂСѓРіРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+  //--------------- общие функции объекта детали -------------------------------//
+  virtual void            Assign( const PrObject &other ) override;           // установить параметры по другому объекту
 
-  virtual bool            RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath ) override; // РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+  virtual bool            RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath ) override; // восстановить связи
   virtual void            ClearReferencedObjects( bool soft ) override;
-  virtual bool            ChangeReferences( ChangeReferencesData & changedRefs ) override; ///< Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
-  virtual bool            IsValid() const override;  // РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕР±СЉРµРєС‚Р°
-  virtual void            WhatsWrong( WarningsArray & ); // РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+  virtual bool            ChangeReferences( ChangeReferencesData & changedRefs ) override; ///< Заменить ссылки на объекты
+  virtual bool            IsValid() const override;  // проверка определенности объекта
+  virtual void            WhatsWrong( WarningsArray & ); // набирает массив предупреждений из ресурса
   virtual bool            IsThisParent( uint8 relType, const WrapSomething & ) const override;
   virtual void            GetVariableParameters( VarParArray &, ParCollType parCollType ) override;
-  virtual void            ForgetVariables() override; // РР  K6+ Р·Р°Р±С‹С‚СЊ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ, СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
-  virtual bool            PrepareToAdding( PartRebuildResult &, PartObject * ) override; //РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ РєРѕ РІСЃС‚СЂР°РёРІР°РЅРёСЋ РІ РјРѕРґРµР»СЊ
-                                                                                         // СЃРѕР·РґР°РЅРёРµ С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ Solida
-                                                                                         // РєРѕРґ РѕС€РёР±РєРё РЅРµРѕР±С…РѕРґРёРјРѕ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РїСЂРѕРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ
+  virtual void            ForgetVariables() override; // ИР K6+ забыть все переменные, связанные с параметрами
+  virtual bool            PrepareToAdding( PartRebuildResult &, PartObject * ) override; //подготовиться ко встраиванию в модель
+                                                                                         // создание фантомного или результативного Solida
+                                                                                         // код ошибки необходимо обязательно проинициализировать
   virtual MbSolid       * MakeSolid( uint              & codeError,
     MakeSolidParam    & mksdParam,
     uint                shellThreadId ) override;
-  // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+  // приготовить свое, характерное тело
   virtual uint            PrepareInterimSolid( MbCurve3D            & curve,
     RPArray<MbFace>      & mbFaces,
     MbSNameMaker         & name,
     MbSolid              & prevSolid,
-    MbBendValues         & params,        // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-    const IfComponent    * /*operOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-    const IfComponent    * /*bodyOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+    MbBendValues         & params,        // свои уже приготовленные параметры
+    const IfComponent    * /*operOwner*/, // компонент - владелец этой операции
+    const IfComponent    * /*bodyOwner*/, // компонент - владелец тела, над которым эта операция производиться
     uint                   idShellThread,
     MbSolid              *&currSolid,
     WhatIsDone            wDone );
-  // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+  // приготовить свое, характерное тело
   virtual uint            PrepareLocalSolid( MbCurve3D            & curve,
     RPArray<MbFace>      & mbFaces,
     MbSNameMaker         & name,
     MbSolid              & prevSolid,
-    MbBendValues         & params,        // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-    const IfComponent    * /*operOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-    const IfComponent    * /*bodyOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+    MbBendValues         & params,        // свои уже приготовленные параметры
+    const IfComponent    * /*operOwner*/, // компонент - владелец этой операции
+    const IfComponent    * /*bodyOwner*/, // компонент - владелец тела, над которым эта операция производиться
     WhatIsDone             wDone,
     uint                   idShellThread,
     MbSolid              *&currSolid ) = 0;
-  // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+  // приготовить свои параметры
   virtual MbBendValues &  PrepareLocalParameters( const IfComponent * component ) = 0;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ IfHotPoints
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+  // Реализация IfHotPoints
+  /// Создать хот-точки
   virtual void GetHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool ) override;
-  /// РќР°С‡Р°Р»Рѕ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РЅР°Р¶Р°С‚Р° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+  /// Начало перетаскивания хот-точки (на хот-точке нажата левая кнопка мыши)
   virtual bool BeginDragHotPoint( HotPointParam & hotPoint ) override;
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
-  // step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+  /// Перерасчет при перетаскивании хот-точки
+  // step - шаг дискретности, для определения смещения с заданным пользователем шагом
   virtual bool ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
     double step, D3Draw & pD3DrawTool ) override;
-  /// Р—Р°РІРµСЂС€РµРЅРёРµ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РѕС‚РїСѓС‰РµРЅР° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+  /// Завершение перетаскивания хот-точки (на хот-точке отпущена левая кнопка мыши)
   virtual bool EndDragHotPoint( HotPointParam & hotPoint, D3Draw & pD3DrawTool ) override;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ С…РѕС‚-С‚РѕС‡РµРє СЂР°РґРёСѓСЃРѕРІ СЃРіРёР±РѕРІ РѕС‚ ShMtStraighten
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+  // Реализация хот-точек радиусов сгибов от ShMtStraighten
+  /// Создать хот-точки (зарезервированы индексы с 5000 до 5999)
   virtual void GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ShMtBendObject &         children ) override;
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+  /// Перерасчет при перетаскивании хот-точки
   virtual bool ChangeChildrenHotPoint( HotPointParam &  hotPoint,
     const MbVector3D &     vector,
     double           step,
@@ -5334,20 +5334,20 @@ public:
 protected:
   virtual const AbsReferenceContainer * GetRefContainer( const IfComponent & bodyOwner ) const override { return &m_bendFaces; }
 
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+  /// Пересчитать местоположение хот-точек
   virtual void            UpdateHotPoints( HotPointBaseBendLineOperUtil & util,
     RPArray<HotPointParam> &       hotPoints,
     MbBendOverSegValues &          params,
     D3Draw &                       pD3DrawTool );
-  /// РЎРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// Создать размеры объекта по хот-точкам
   virtual void CreateDimensionsByHotPoints( IfUniqueName           * un,
     SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
     const RPArray<HotPointParam> & hotPoints ) override;
-  /// РћР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// Обновить геометрию размеров объекта по хот-точкам
   void UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     HotPointBaseBendLineOperUtil & util );
-  /// РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
+  /// Ассоциировать постоянные размеры с переменными родителя
   virtual void AssignDimensionsVariables( const SFDPArray<PartObject>  & dimensions ) override;
 
   void            CollectFaces( PArray<MbFace> & faces,
@@ -5356,17 +5356,17 @@ protected:
   void            SimplyCollectFaces( PArray<MbFace> & faces );
 
 
-  /// РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РЅР°РїСЂР°РІР»РµРЅРёСЏ
+  /// Обновить хот-точку направления
   void            UpdateDirectionHotPoint( RPArray<HotPointParam> & hotPoints,
     HotPointBaseBendLineOperUtil & util );
-  /// РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РЅРµРїРѕРґРІРёР¶РЅРѕР№ СЃС‚РѕСЂРѕРЅС‹
+  /// Обновить хот-точку неподвижной стороны
   void            UpdateDirection2HotPoint( RPArray<HotPointParam> & hotPoints,
     HotPointBaseBendLineOperUtil & util );
-  ///РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР°
+  ///Обновить хот-точку радиуса
   void            UpdateRadiusHotPoint( RPArray<HotPointParam> & hotPoints,
     HotPointBaseBendLineOperUtil & util,
     MbBendOverSegValues & bendParameters );
-  /// РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СѓРіР»Р°
+  /// Обновить хот-точку угла
   void            UpdateAngleHotPoint( RPArray<HotPointParam> & hotPoints,
     HotPointBaseBendLineOperUtil & util,
     MbBendOverSegValues & bendParameters );
@@ -5374,7 +5374,7 @@ protected:
   bool            IsSavedUnhistoried( long version, ShMtBaseBendParameters::TypeRemoval typeRemoval ) const;
 
 private:
-  ShMtBaseBendLine& operator = ( const ShMtBaseBendLine & ); // РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ
+  ShMtBaseBendLine& operator = ( const ShMtBaseBendLine & ); // не реализовано
                                                              /*
                                                              void ShMtBaseBendLine::Read( reader &in, ShMtBaseBendLine * obj );
                                                              void ShMtBaseBendLine::Write( writer &out, const ShMtBaseBendLine * obj );
@@ -5394,7 +5394,7 @@ ShMtBaseBendLine::ShMtBaseBendLine( IfUniqueName * un )
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+// конструктор дублирования
 // ---
 ShMtBaseBendLine::ShMtBaseBendLine( const ShMtBaseBendLine & other )
   : ShMtBaseBend( other ),
@@ -5432,7 +5432,7 @@ bool ShMtBaseBendLine::IsThisParent( uint8 relType, const WrapSomething & parent
 
 
 //------------------------------------------------------------------------------
-// СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РїРѕ РґСЂСѓРіРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+// установить параметры по другому объекту
 //---
 void ShMtBaseBendLine::Assign( const PrObject &other )
 {
@@ -5447,7 +5447,7 @@ void ShMtBaseBendLine::Assign( const PrObject &other )
 
 
 //------------------------------------------------------------------------------
-// РґРѕР±Р°РІРёС‚СЊ РёР»Рё СѓРґР°Р»РёС‚СЊ face РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
+// добавить или удалить face который гнем
 // ---
 bool ShMtBaseBendLine::SetResetBendFace( const WrapSomething & wrapper )
 {
@@ -5458,7 +5458,7 @@ bool ShMtBaseBendLine::SetResetBendFace( const WrapSomething & wrapper )
     m_bendFaces.DeleteInd( ind );
   else {
     m_bendFaces.AddObject( wrapper );
-    res = true;                      // РґРѕР±Р°РІРёР»Рё РѕР±СЊРµРєС‚
+    res = true;                      // добавили обьект
   }
 
   return res;
@@ -5466,7 +5466,7 @@ bool ShMtBaseBendLine::SetResetBendFace( const WrapSomething & wrapper )
 
 
 //---------------------------------------------------------------------------------------------
-// СѓРґР°Р»РёС‚СЊ РІСЃРµ face РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
+// удалить все face который гнем
 //---
 void ShMtBaseBendLine::ResetAllBendFace()
 {
@@ -5476,7 +5476,7 @@ void ShMtBaseBendLine::ResetAllBendFace()
 
 
 //------------------------------------------------------------------------------
-// Рє-РІРѕ faces РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
+// к-во faces который гнем
 // ---
 size_t ShMtBaseBendLine::GetBendFaceCount() const
 {
@@ -5485,7 +5485,7 @@ size_t ShMtBaseBendLine::GetBendFaceCount() const
 
 
 //-------------------------------------------------------------------------
-// i - face РєРѕС‚РѕСЂС‹Р№ РіРЅРµРј
+// i - face который гнем
 //---
 WrapSomething * ShMtBaseBendLine::GetBendFace( uint i )
 {
@@ -5522,7 +5522,7 @@ SArray<WrapSomething> ShMtBaseBendLine::GetBaseFaces() const
 
 #ifdef MANY_THICKNESS_BODY_SHMT
 //------------------------------------------------------------------------------
-// РіРѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+// годится ли пришедший объект
 // ---
 bool ShMtBaseBendLine::IsSuitedObject( const WrapSomething & wrapper )
 #else
@@ -5530,7 +5530,7 @@ bool ShMtBaseBendLine::IsSuitedObject( const WrapSomething & wrapper, double thi
 #endif
 {
   bool res = false;
-  // РЁРђ K11 17.12.2008 РћС€РёР±РєР° в„–37142: Р—Р°РїСЂРµС‰СЏРµРј РІС‹Р±РѕСЂ СЂРµР±РµСЂ РјРЅРѕРіРѕС‡Р°СЃС‚РЅС‹С… С‚РµР»
+  // ША K11 17.12.2008 Ошибка №37142: Запрещяем выбор ребер многочастных тел
   if ( wrapper && wrapper.component == wrapper.editComponent && !::IsMultiShellBody( wrapper ) )
   {
     IFPTR( AnyCurve ) anyCurve( wrapper.obj );
@@ -5543,8 +5543,8 @@ bool ShMtBaseBendLine::IsSuitedObject( const WrapSomething & wrapper, double thi
         MbFace * mbFace = face->GetMathFace();
         if ( mbFace && mbFace->IsPlanar() && mbFace->GetName().IsSheet() )
         {
-          // РїРѕРґС…РѕРґСЏС‰РёР№ РіСЂР°РЅСЊ С‚РѕР»СЊРєРѕ РІ С‚РѕРј СЃР»СѓС‡Р°Рµ РµСЃР»Рё РѕРЅР° РїСЂРёРЅР°РґР»РµР¶РёС‚ С‚РѕРјСѓ Р¶Рµ С‚РµР»Сѓ С‡С‚Рѕ Рё РІС‹Р±СЂР°РЅРЅР°СЏ СѓР¶Рµ
-          // РёР»Рё РµСЃР»Рё РµС‰Рµ РЅРµС‚ РіСЂР°РЅРё
+          // подходящий грань только в том случае если она принадлежит тому же телу что и выбранная уже
+          // или если еще нет грани
           res = true;
           if ( m_bendFaces.Count() )
           {
@@ -5567,7 +5567,7 @@ bool ShMtBaseBendLine::IsSuitedObject( const WrapSomething & wrapper, double thi
 
 
 //-------------------------------------------------------------------------------
-// РќР°Р±СЂР°С‚СЊ РІСЃРµ РіРѕРґРЅС‹Рµ faces
+// Набрать все годные faces
 //---
 void ShMtBaseBendLine::CollectFaces( PArray<MbFace>    & faces,
   const IfComponent & bodyOwner,
@@ -5600,7 +5600,7 @@ void ShMtBaseBendLine::CollectFaces( PArray<MbFace>    & faces,
 
 
 //-------------------------------------------------------------------------------
-// РќР°Р±СЂР°С‚СЊ РІСЃРµ РіРѕРґРЅС‹Рµ faces
+// Набрать все годные faces
 //---
 void ShMtBaseBendLine::SimplyCollectFaces( PArray<MbFace> & faces )
 {
@@ -5621,7 +5621,7 @@ void ShMtBaseBendLine::SimplyCollectFaces( PArray<MbFace> & faces )
 
 
 //------------------------------------------------------------------------------
-// СЃРѕР·РґР°РЅРёРµ С„Р°РЅС‚РѕРјРЅРѕРіРѕ РёР»Рё СЂРµР·СѓР»СЊС‚Р°С‚РёРІРЅРѕРіРѕ Solida
+// создание фантомного или результативного Solida
 // ---
 MbSolid* ShMtBaseBendLine::MakeSolid( uint              & codeError,
   MakeSolidParam    & mksdParam,
@@ -5656,7 +5656,7 @@ MbSolid* ShMtBaseBendLine::MakeSolid( uint              & codeError,
         }
         curveDup->AddRef();
 
-        // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+        // приготовить свои параметры
         PartRebuildResult * partRResult = mksdParam.m_operOwner ? mksdParam.m_operOwner->ReturnPartRebuildResult() : nullptr;
         if ( partRResult )
         {
@@ -5681,8 +5681,8 @@ MbSolid* ShMtBaseBendLine::MakeSolid( uint              & codeError,
                 pComplexName,
                 *mksdParam.m_prevSolid,
                 params,
-                mksdParam.m_operOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-                mksdParam.m_bodyOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+                mksdParam.m_operOwner, // компонент - владелец этой операции
+                mksdParam.m_bodyOwner, // компонент - владелец тела, над которым эта операция производиться
                 shellThreadId,
                 result,
                 mksdParam.m_wDone );
@@ -5709,15 +5709,15 @@ MbSolid* ShMtBaseBendLine::MakeSolid( uint              & codeError,
 
 
 //---------------------------------------------------------------------------------
-// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+// приготовить свое, промежуточное, характерное тело
 //---
 uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
   RPArray<MbFace>      & mbFaces,
   MbSNameMaker         & nameMaker,
   MbSolid              & prevSolid,
-  MbBendValues         & params,    // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-  const IfComponent    * operOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-  const IfComponent    * bodyOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+  MbBendValues         & params,    // свои уже приготовленные параметры
+  const IfComponent    * operOwner, // компонент - владелец этой операции
+  const IfComponent    * bodyOwner, // компонент - владелец тела, над которым эта операция производиться
   uint                   idShellThread,
   MbSolid              *&resultSolid,
   WhatIsDone            wDone )
@@ -5728,14 +5728,14 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
     MbPlacement3D place;
     mbFaces[0]->GetPlacement( &place );
     {
-      UtilFindFixedPairFaces * utlFindFixedFaces = wDone == wd_Phantom ? nullptr : new UtilFindFixedPairFaces( mbFaces );  // РїРѕРёСЃРє Рё СЃРѕС…СЂР°РЅРµРЅРёРµ С„РёРєСЃРёСЂРѕРІР°РЅРЅРѕР№ РіСЂР°РЅРё РёРјРµРЅРё
+      UtilFindFixedPairFaces * utlFindFixedFaces = wDone == wd_Phantom ? nullptr : new UtilFindFixedPairFaces( mbFaces );  // поиск и сохранение фиксированной грани имени
       codeError = PrepareLocalSolid( curve,
         mbFaces,
         nameMaker,
         prevSolid,
         params,
-        operOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-        bodyOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+        operOwner, // компонент - владелец этой операции
+        bodyOwner, // компонент - владелец тела, над которым эта операция производиться
         wDone,
         idShellThread,
         resultSolid );
@@ -5750,16 +5750,16 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
 
     if ( GetObjVersion().GetVersionContainer().GetAppVersion() > 0x0C000001L || GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0A000001L )
     {
-      // РЁРђ K9 19.1.2007 РћС€РёР±РєР° в„–20801 : РўРµРїРµСЂСЊ СЂР°Р·РіРёР±Р°РµС‚СЃСЏ РІ РјР°С‚РµРјР°С‚РёРєРµ
-      // CC K12 РСЃРїСЂР°РІР»РµРЅРёРµ СЌС‚РѕР№ РѕС€РёР±РєРё С‡РµСЂРµР· РјР°С‚РµРјР°С‚РёРєСѓ РїСЂРёРІРµР»Рѕ Рє РїРµСЂРµСЃРєР°РєРёРІР°РЅРёСЋ РёРјРµРЅ РіСЂР°РЅРµР№. Р§С‚Рѕ РѕС‚РѕР±СЂРµР¶РµРЅРѕ РІ
-      // CC K12 РєРѕРјРјРµРЅС‚Рµ #8 СЌС‚РѕР№ Р¶Рµ РѕС€РёР±РєРё.
-      // РЎРЎ K12 Р’РѕР·РІСЂР°С‰Р°СЋ РІСЃРµ РЅР°Р·Р°Рґ Рё Р·Р°РІРѕР¶Сѓ РїРѕРґ РІРµСЂСЃРёСЋ. Р’ РїСЂРѕРјРµР¶СѓС‚РєРµ РјРµР¶РґСѓ СЌС‚РёРјРё РІРµСЂСЃРёСЏРјРё РїСѓСЃС‚СЊ СЂР°Р±РѕС‚Р°РµС‚ С‚Р°РєР¶Рµ РЅРµ РєРѕСЂРµРєС‚РЅРѕ.
-      // РЎРЎ K12 +РСЃРїСЂР°РІР»РµРЅРёРµ РѕС€РёР±РєРё 40270
+      // ША K9 19.1.2007 Ошибка №20801 : Теперь разгибается в математике
+      // CC K12 Исправление этой ошибки через математику привело к перескакиванию имен граней. Что отобрежено в
+      // CC K12 комменте #8 этой же ошибки.
+      // СС K12 Возвращаю все назад и завожу под версию. В промежутке между этими версиями пусть работает также не коректно.
+      // СС K12 +Исправление ошибки 40270
       if ( IsStraighten() && resultSolid )
       {
         codeError = rt_SolidError;
-        MbBendValues paramBends;           // РїР°СЂР°РјРµС‚СЂС‹ Р»РёСЃС‚РѕРІРѕРіРѕ С‚РµР»Р°
-                                           // РЎРЎ K12 			 paramBends.thickness = params.thickness;
+        MbBendValues paramBends;           // параметры листового тела
+                                           // СС K12 			 paramBends.thickness = params.thickness;
 
         PArray<MbSheetMetalBend> bend( 0, 1, true );
         RPArray<MbFace> faces( 0, 1 );
@@ -5775,7 +5775,7 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
               {
                 MbFace * innerFace = faces[i];
                 PRECONDITION( innerFace != nullptr );
-                MbFace * outerFace = ::FindOppositeFace( *innerFace, GetThickness()/* CC Рљ12 params.thickness*/, st_CylinderSurface );
+                MbFace * outerFace = ::FindOppositeFace( *innerFace, GetThickness()/* CC К12 params.thickness*/, st_CylinderSurface );
                 if ( outerFace != nullptr )
                   bend.Add( new MbSheetMetalBend( innerFace, outerFace, bendObj->GetCoefficient(),
                     bendObj->GetAbsRadius(), 0.0/*angle*/, 0.0/*coneAngle*/ ) );
@@ -5788,10 +5788,10 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
 
         if ( bend.Count() )
         {
-          // РїРѕРёСЃРє С„РёРєСЃРёСЂРѕРІР°РЅРЅРѕР№ РіСЂР°РЅРё
+          // поиск фиксированной грани
           MbFace *faceFix = nullptr;
           MbPlacement3D pl;
-          // 1. РЅР° СЃРѕРІРїР°РґРµРЅРё РїР»Р°Р№СЃРѕРІ РіСЂР°РЅРµР№
+          // 1. на совпадени плайсов граней
           for ( size_t i = 0, c = faces.Count(); i < c; i++ )
           {
             if ( faces[i]->GetPlacement( &pl ) && pl.Complanar( place ) )
@@ -5801,7 +5801,7 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
             }
           }
 
-          // 2. Р±РѕРєРѕРІР°СЏ РіСЂР°РЅСЊ СЏРІР»СЏРµС‚СЃСЏ С„РёРєСЃРѕРј
+          // 2. боковая грань является фиксом
           if ( faceFix == nullptr )
           {
             for ( size_t k = 0, ck = bend.Count(); k < ck; k++ )
@@ -5831,7 +5831,7 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
             }
           }
 
-          // 3. Р»СЋР±Р°СЏ РїР°СЂР°Р»Р»РµР»СЊРЅР°СЏ РіСЂР°РЅСЊ СЏРІР»СЏРµС‚СЃСЏ С„РёРєСЃРѕРј
+          // 3. любая параллельная грань является фиксом
           if ( faceFix == nullptr )
           {
             for ( size_t i = 0, c = faces.Count(); i < c; i++ )
@@ -5855,14 +5855,14 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
 
             MbSolid * oldResult = resultSolid;
             const MbCartPoint fixedPoint;
-            codeError = UnbendSheetSolid( *resultSolid,         // РёСЃС…РѕРґРЅРѕРµ С‚РµР»Рѕ
-              cm_KeepHistory,  // РќР“ СЂР°Р±РѕС‚Р°С‚СЊ СЃ РєРѕРїРёРµР№ РѕР±РѕР»РѕС‡РєРё РёСЃС…РѕРґРЅРѕРіРѕ С‚РµР»Р°
-              bend,            // РјР°СЃСЃРёРІ СЃРіРёР±РѕРІ, СЃРѕСЃС‚РѕСЏС‰РёС… РёР· РїР°СЂ РіСЂР°РЅРµР№ - РІРЅСѓС‚СЂРµРЅРЅРµР№ Рё РІРЅРµС€РЅРµР№ РіСЂР°РЅРµР№ СЃРіРёР±Р°
-              *faceFix,        // РіСЂР°РЅСЊ, РѕСЃС‚Р°СЋС‰Р°СЏСЃСЏ РЅРµРїРѕРґРІРёР¶РЅРѕР№
-              fixedPoint,      // С‚РѕС‡РєР° РІ РїР°СЂР°РјРµС‚СЂРёС‡РµСЃРєРѕР№ РѕР±Р»Р°СЃС‚Рё faceFix, РІ РєРѕС‚РѕСЂРѕР№ СЂР°Р·РѕРіРЅСѓС‚Р°СЏ РіСЂР°РЅСЊ РєР°СЃР°РµС‚СЃСЏ СЃРѕРіРЅСѓС‚РѕР№
-                               // CC K12 																				params,          // РїР°СЂР°РјРµС‚СЂС‹ Р»РёСЃС‚РѕРІРѕРіРѕ С‚РµР»Р°
-              nameMaker,            // РёРјРµРЅРѕРІР°С‚РµР»СЊ
-              resultSolid );        // СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµРµ С‚РµР»Рѕ
+            codeError = UnbendSheetSolid( *resultSolid,         // исходное тело
+              cm_KeepHistory,  // НГ работать с копией оболочки исходного тела
+              bend,            // массив сгибов, состоящих из пар граней - внутренней и внешней граней сгиба
+              *faceFix,        // грань, остающаяся неподвижной
+              fixedPoint,      // точка в параметрической области faceFix, в которой разогнутая грань касается согнутой
+                               // CC K12 																				params,          // параметры листового тела
+              nameMaker,            // именователь
+              resultSolid );        // результирующее тело
             if ( resultSolid != oldResult )
               ::DeleteItem( oldResult );
           }
@@ -5873,11 +5873,11 @@ uint ShMtBaseBendLine::PrepareInterimSolid( MbCurve3D            & curve,
 
   return codeError;
 }
-// РќРњРђ K7+ #endif
+// НМА K7+ #endif
 
 
 //------------------------------------------------------------------------------
-// РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕРїРµСЂР°С†РёРё
+// проверка определенности операции
 // ---
 bool ShMtBaseBendLine::IsValid() const
 {
@@ -5890,7 +5890,7 @@ bool ShMtBaseBendLine::IsValid() const
 
 
 //------------------------------------------------------------------------------
-// РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+// восстановить связи
 // ---
 bool ShMtBaseBendLine::RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath )
 {
@@ -5899,7 +5899,7 @@ bool ShMtBaseBendLine::RestoreReferences( PartRebuildResult &result, bool allRef
 
   if ( IsJustRead() && GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0B000001L )
   {
-    // РґР»СЏ РІРµСЂСЃРёР№ СЃС‚Р°СЂС€Рµ 11 РЅР°РґРѕ РїСЂРѕСЃС‚Р°РІРёС‚СЊ РёРґ РЅРёС‚РєРё РІ РїРѕРґСЃРіРёР±С‹
+    // для версий старше 11 надо проставить ид нитки в подсгибы
     IFPTR( Primitive ) prim( m_bendFaces.GetObjectTrans( 0 ).obj );
     if ( prim )
       for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
@@ -5911,7 +5911,7 @@ bool ShMtBaseBendLine::RestoreReferences( PartRebuildResult &result, bool allRef
 
 
   //------------------------------------------------------------------------------
-  // РћС‡РёСЃС‚РёС‚СЊ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ soft = true - С‚РѕР»СЊРєРѕ РІСЂР°РїРµСЂС‹ (РЅРµ С‚СЂРѕРіР°СЏ РёРјРµРЅР°)
+  // Очистить опорные объекты soft = true - только враперы (не трогая имена)
   // ---
 void ShMtBaseBendLine::ClearReferencedObjects( bool soft )
 {
@@ -5921,7 +5921,7 @@ void ShMtBaseBendLine::ClearReferencedObjects( bool soft )
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
+// Заменить ссылки на объекты
 // ---
 bool ShMtBaseBendLine::ChangeReferences( ChangeReferencesData & changedRefs )
 {
@@ -5934,24 +5934,24 @@ bool ShMtBaseBendLine::ChangeReferences( ChangeReferencesData & changedRefs )
 
 
 //------------------------------------------------------------------------------
-// РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+// набирает массив предупреждений из ресурса
 // ---
 void ShMtBaseBendLine::WhatsWrong( WarningsArray & warnings ) {
   ShMtBaseBend::WhatsWrong( warnings );
 
   for ( size_t i = warnings.Count(); i--; )
   {
-    if ( warnings[i]->GetResId() == IDP_RT_NOINTERSECT )// KA V17 16.05.2016 KOMPAS-7873 РџСЂРё РЅРµ РїРµСЂРµСЃРµС‡РµРЅРёРё, РґРѕР±Р°РІРёРј РµС‰Рµ РѕРґРЅРѕ СЃРѕР±С‰РµРЅРёРµ
+    if ( warnings[i]->GetResId() == IDP_RT_NOINTERSECT )// KA V17 16.05.2016 KOMPAS-7873 При не пересечении, добавим еще одно собщение
       warnings.AddWarning( IDP_SF_ERROR, module );
   }
 
   if ( !m_bendFaces.IsFull() )
-    warnings.AddWarning( IDP_WARNING_LOSE_SUPPORT_OBJ, module ); // "РџРѕС‚РµСЂСЏРЅ РѕРґРёРЅ РёР»Рё РЅРµСЃРєРѕР»СЊРєРѕ РѕРїРѕСЂРЅС‹С… РѕР±СЉРµРєС‚РѕРІ"
+    warnings.AddWarning( IDP_WARNING_LOSE_SUPPORT_OBJ, module ); // "Потерян один или несколько опорных объектов"
 }
 
 
 //------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+// задать кривую сгиба
 // ---
 void ShMtBaseBendLine::SetBendObject( const WrapSomething * wrapper ) {
   ShMtBaseBend::SetObject( wrapper );
@@ -5959,7 +5959,7 @@ void ShMtBaseBendLine::SetBendObject( const WrapSomething * wrapper ) {
 
 
 //------------------------------------------------------------------------------
-// РїРѕР»СѓС‡РёС‚СЊ РєСЂРёРІСѓСЋ СЃРіРёР±Р°
+// получить кривую сгиба
 // ---
 const WrapSomething & ShMtBaseBendLine::GetBendObject() const {
   return ShMtBaseBend::GetObject();
@@ -5967,13 +5967,13 @@ const WrapSomething & ShMtBaseBendLine::GetBendObject() const {
 
 
 //-----------------------------------------------------------------------------
-//РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ РєРѕ РІСЃС‚СЂР°РёРІР°РЅРёСЋ РІ РјРѕРґРµР»СЊ
+//подготовиться ко встраиванию в модель
 //---
 bool ShMtBaseBendLine::PrepareToAdding( PartRebuildResult & result, PartObject * toObj )
 {
   if ( ShMtBaseBend::PrepareToAdding( result, toObj ) )
   {
-    if ( !GetFlagValue( O3D_IsReading ) ) // РЅРµ РїСЂРѕС‡РёС‚Р°РЅ РёР· РїР°РјСЏС‚Рё, Р° СЃРѕР·РґР°РЅ РєР°Рє new  BUG 68896
+    if ( !GetFlagValue( O3D_IsReading ) ) // не прочитан из памяти, а создан как new  BUG 68896
     {
       GetParameters().PrepareToAdding( result, this );
       UpdateMeasurePars( gtt_none, true );
@@ -5986,7 +5986,7 @@ bool ShMtBaseBendLine::PrepareToAdding( PartRebuildResult & result, PartObject *
 
 
 //------------------------------------------------------------------------------
-// РІС‹РґР°С‚СЊ РјР°СЃСЃРёРІ РїР°СЂР°РјРµС‚СЂРѕРІ, СЃРІСЏР·Р°РЅРЅС‹С… СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё
+// выдать массив параметров, связанных с переменными
 // ---
 void ShMtBaseBendLine::GetVariableParameters( VarParArray & parVars, ParCollType parCollType )
 {
@@ -5999,7 +5999,7 @@ void ShMtBaseBendLine::GetVariableParameters( VarParArray & parVars, ParCollType
 
 
 //-----------------------------------------------------------------------------
-// РР  K6+ Р·Р°Р±С‹С‚СЊ РІСЃРµ РїРµСЂРµРјРµРЅРЅС‹Рµ, СЃРІСЏР·Р°РЅРЅС‹Рµ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
+// ИР K6+ забыть все переменные, связанные с параметрами
 //---
 void ShMtBaseBendLine::ForgetVariables() {
   ShMtBaseBend::ForgetVariables();
@@ -6007,9 +6007,9 @@ void ShMtBaseBendLine::ForgetVariables() {
 }
 
 
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+// Создать хот-точки
 // ---
 void ShMtBaseBendLine::GetHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -6017,14 +6017,14 @@ void ShMtBaseBendLine::GetHotPoints( RPArray<HotPointParam> & hotPoints,
   ActiveHotPoints          type,
   D3Draw &                 pD3DrawTool )
 {
-  hotPoints.Add( new HotPointDirectionParam( ehp_ShMtBendDirection, editComponent, topComponent ) ); // РЅР°РїСЂР°РІР»РµРЅРёРµ
-  hotPoints.Add( new HotPointDirectionParam( ehp_ShMtBendDirection2, editComponent, topComponent ) ); // РќРµРїРѕРґРІРёР¶РЅР°СЏ СЃС‚РѕСЂРѕРЅР°
-  hotPoints.Add( new HotPointBendLineRadiusParam( ehp_ShMtBendRadius, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  hotPoints.Add( new HotPointDirectionParam( ehp_ShMtBendDirection, editComponent, topComponent ) ); // направление
+  hotPoints.Add( new HotPointDirectionParam( ehp_ShMtBendDirection2, editComponent, topComponent ) ); // Неподвижная сторона
+  hotPoints.Add( new HotPointBendLineRadiusParam( ehp_ShMtBendRadius, editComponent, topComponent, HotPointVectorParam::ht_move ) ); // радиус сгиба
 }
 
 
 //-------------------------------------------------------------------------------
-// РќР°С‡Р°Р»Рѕ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РЅР°Р¶Р°С‚Р° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+// Начало перетаскивания хот-точки (на хот-точке нажата левая кнопка мыши)
 // ---
 bool ShMtBaseBendLine::BeginDragHotPoint( HotPointParam & hotPoint )
 {
@@ -6038,7 +6038,7 @@ bool ShMtBaseBendLine::BeginDragHotPoint( HotPointParam & hotPoint )
 
 
 //-----------------------------------------------------------------------------
-// Р—Р°РІРµСЂС€РµРЅРёРµ РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёСЏ С…РѕС‚-С‚РѕС‡РєРё (РЅР° С…РѕС‚-С‚РѕС‡РєРµ РѕС‚РїСѓС‰РµРЅР° Р»РµРІР°СЏ РєРЅРѕРїРєР° РјС‹С€Рё)
+// Завершение перетаскивания хот-точки (на хот-точке отпущена левая кнопка мыши)
 //---
 bool ShMtBaseBendLine::EndDragHotPoint( HotPointParam & hotPoint, D3Draw & pD3DrawTool )
 {
@@ -6048,11 +6048,11 @@ bool ShMtBaseBendLine::EndDragHotPoint( HotPointParam & hotPoint, D3Draw & pD3Dr
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - СЃРґРІРёРЅСѓС‚Р°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРґРІРёРіР°
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+\param hotPoint - сдвинутая хот-точка
+\param vector - вектор сдвига
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
 */
 //---
 bool ShMtBaseBendLine::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
@@ -6062,24 +6062,24 @@ bool ShMtBaseBendLine::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3
 
   switch ( hotPoint.GetIdent() )
   {
-  case ehp_ShMtBendDirection: // РЅР°РїСЂР°РІР»РµРЅРёРµ
+  case ehp_ShMtBendDirection: // направление
     ret = ((HotPointDirectionParam &)hotPoint).SetHotPoint( vector, GetParameters().m_dirAngle, pD3DrawTool );
     break;
 
-  case ehp_ShMtBendDirection2: // РќРµРїРѕРґРІРёР¶РЅР°СЏ СЃС‚РѕСЂРѕРЅР°
+  case ehp_ShMtBendDirection2: // Неподвижная сторона
     ret = ((HotPointDirectionParam &)hotPoint).SetHotPoint( vector,
       ((ShMtBendLineParameters &)GetParameters()).m_leftFixed,
       pD3DrawTool );
     break;
 
-  case ehp_ShMtBendRadius: // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  case ehp_ShMtBendRadius: // радиус сгиба
     ret = ((HotPointBendLineRadiusParam &)hotPoint).SetRadiusHotPoint( vector, step,
       GetParameters(),
       GetParameters(),
       GetThickness() );
     break;
 
-  case ehp_ShMtBendAngle: // СѓРіРѕР» СЃРіРёР±Р°
+  case ehp_ShMtBendAngle: // угол сгиба
     ret = ::SetHotPointAnglePar( (HotPointBendAngleParam&)hotPoint, vector,
       step, GetParameters() );
     break;
@@ -6091,9 +6091,9 @@ bool ShMtBaseBendLine::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РЅР°РїСЂР°РІР»РµРЅРёСЏ
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє РѕРїРµСЂР°С†РёРё
-\param util - СѓС‚РёР»РёС‚Р° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
+Обновить хот-точку направления
+\param hotPoints - массив хот-точек операции
+\param util - утилита для расчета хот-точек
 */
 //---
 void ShMtBaseBendLine::UpdateDirectionHotPoint( RPArray<HotPointParam> & hotPoints,
@@ -6108,9 +6108,9 @@ void ShMtBaseBendLine::UpdateDirectionHotPoint( RPArray<HotPointParam> & hotPoin
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РЅРµРїРѕРґРІРёР¶РЅРѕР№ СЃС‚РѕСЂРѕРЅС‹
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
-\param util - СѓС‚РёР»РёС‚Р° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
+Обновить хот-точку неподвижной стороны
+\param hotPoints - массив хот-точек
+\param util - утилита для расчета хот-точек
 */
 //---
 void ShMtBaseBendLine::UpdateDirection2HotPoint( RPArray<HotPointParam> & hotPoints,
@@ -6125,10 +6125,10 @@ void ShMtBaseBendLine::UpdateDirection2HotPoint( RPArray<HotPointParam> & hotPoi
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР°
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
-\param util - СѓС‚РёР»РёС‚Р° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
-\param bendParameters - РїР°СЂР°РјРµС‚СЂС‹ СЃРіРёР±Р°
+Обновить хот-точку радиуса
+\param hotPoints - массив хот-точек
+\param util - утилита для расчета хот-точек
+\param bendParameters - параметры сгиба
 */
 //---
 void ShMtBaseBendLine::UpdateRadiusHotPoint( RPArray<HotPointParam> & hotPoints,
@@ -6154,10 +6154,10 @@ void ShMtBaseBendLine::UpdateRadiusHotPoint( RPArray<HotPointParam> & hotPoints,
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СѓРіР»Р°
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
-\param util - СѓС‚РёР»РёС‚Р° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
-\param bendParameters - РїР°СЂР°РјРµС‚СЂС‹ СЃРіРёР±Р°
+Обновить хот-точку угла
+\param hotPoints - массив хот-точек
+\param util - утилита для расчета хот-точек
+\param bendParameters - параметры сгиба
 */
 //---
 void ShMtBaseBendLine::UpdateAngleHotPoint( RPArray<HotPointParam> & hotPoints,
@@ -6175,7 +6175,7 @@ void ShMtBaseBendLine::UpdateAngleHotPoint( RPArray<HotPointParam> & hotPoints,
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+// Пересчитать местоположение хот-точек
 //---
 void ShMtBaseBendLine::UpdateHotPoints( HotPointBaseBendLineOperUtil & util,
   RPArray<HotPointParam> &       hotPoints,
@@ -6193,11 +6193,11 @@ void ShMtBaseBendLine::UpdateHotPoints( HotPointBaseBendLineOperUtil & util,
 
 //------------------------------------------------------------------------------
 /**
-РЎРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param  un         - СѓРЅРёРІР°Р»СЊРЅРѕРµ РёРјСЏ
-\param  dimensions - СЂР°Р·РјРµСЂС‹
-\param  hotPoints  - С…РѕС‚-С‚РѕС‡РєРё
-\return РЅРµС‚
+Создать размеры объекта по хот-точкам
+\param  un         - унивальное имя
+\param  dimensions - размеры
+\param  hotPoints  - хот-точки
+\return нет
 */
 //---
 void ShMtBaseBendLine::CreateDimensionsByHotPoints( IfUniqueName           * un,
@@ -6227,10 +6227,10 @@ void ShMtBaseBendLine::CreateDimensionsByHotPoints( IfUniqueName           * un,
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param  dimensions - СЂР°Р·РјРµСЂС‹
-\param  hotPoints  - С…РѕС‚-С‚РѕС‡РєРё
-\return РЅРµС‚
+Обновить геометрию размеров объекта по хот-точкам
+\param  dimensions - размеры
+\param  hotPoints  - хот-точки
+\return нет
 */
 //---
 void ShMtBaseBendLine::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
@@ -6246,7 +6246,7 @@ void ShMtBaseBendLine::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDi
     if ( dimRad )
       util.UpdateBendRadDimension( *dimRad, pars->m_radius );
 
-    //РЈРіР»РѕРІРѕР№ СЂР°Р·РјРµСЂ
+    //Угловой размер
     IFPTR( OperationAngularDimension ) anglDim( ::FindGnrDimension( dimensions, ehp_ShMtBendAngle, false ) );
     if ( anglDim )
       util.UpdateAngularBendDim( *anglDim, *pars );
@@ -6256,9 +6256,9 @@ void ShMtBaseBendLine::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDi
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
-\param  dimensions - СЂР°Р·РјРµСЂС‹
-\return РЅРµС‚
+Ассоциировать постоянные размеры с переменными родителя
+\param  dimensions - размеры
+\return нет
 */
 //---
 void ShMtBaseBendLine::AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions )
@@ -6269,7 +6269,7 @@ void ShMtBaseBendLine::AssignDimensionsVariables( const SFDPArray<PartObject> & 
 
 
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+// Создать хот-точки (зарезервированы индексы с 5000 до 5999)
 // ---
 void ShMtBaseBendLine::GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -6277,17 +6277,17 @@ void ShMtBaseBendLine::GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   ShMtBendObject &         children )
 {
   hotPoints.Add( new HotPointBendLineRadiusParam( ehp_ShMtBendObjectRadius, editComponent,
-    topComponent ) ); // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+    topComponent ) ); // радиус сгиба
 }
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - РїРµСЂРµС‚Р°СЃРєРёРІР°РµРјР°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРјРµС‰РµРЅРёСЏ
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoint - перетаскиваемая хот-точка
+\param vector - вектор смещения
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 bool ShMtBaseBendLine::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
@@ -6297,17 +6297,17 @@ bool ShMtBaseBendLine::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
 {
   bool ret = false;
 
-  if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius ) // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius ) // радиус сгиба
     ret = ((HotPointBendLineRadiusParam &)hotPoint).SetRadiusHotPoint( vector, step, GetParameters(), children, GetThickness() );
 
   return ret;
 }
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 
 
 //--------------------------------------------------------------------------------
 /**
-РќРµРѕР±С…РѕРґРёРјРѕ Р»Рё СЃРѕС…СЂР°РЅРµРЅРёРµ Р±РµР· РёСЃС‚РѕСЂРёРё
+Необходимо ли сохранение без истории
 \param version
 \param typeRemoval
 \return bool
@@ -6320,7 +6320,7 @@ bool ShMtBaseBendLine::IsSavedUnhistoried( long version, ShMtBaseBendParameters:
 
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ РёР· РїРѕС‚РѕРєР°
+// Чтение из потока
 // ---
 void ShMtBaseBendLine::Read( reader &in, ShMtBaseBendLine * obj ) {
   ReadBase( in, (ShMtBaseBend *)obj );
@@ -6329,11 +6329,11 @@ void ShMtBaseBendLine::Read( reader &in, ShMtBaseBendLine * obj ) {
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РІ РїРѕС‚РѕРє
+// Запись в поток
 // ---
 void ShMtBaseBendLine::Write( writer &out, const ShMtBaseBendLine * obj ) {
   if ( out.AppVersion() < 0x06000033L )
-    out.setState( io::cantWriteObject ); // СЃРїРµС†РёР°Р»СЊРЅРѕ РІРІРµРґРµРЅРЅС‹Р№ С‚РёРї РѕС€РёР±РѕС‡РЅРѕР№ СЃРёС‚СѓР°С†РёРё
+    out.setState( io::cantWriteObject ); // специально введенный тип ошибочной ситуации
   else {
     WriteBase( out, (const ShMtBaseBend *)obj );
     out << obj->m_bendFaces;
@@ -6343,7 +6343,7 @@ void ShMtBaseBendLine::Write( writer &out, const ShMtBaseBendLine * obj ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// РєР»Р°СЃСЃР° РѕРїРµСЂР°С†РёР№ СЃРіРёР± РїРѕ Р»РёРЅРёРё
+// класса операций сгиб по линии
 //
 ////////////////////////////////////////////////////////////////////////////////
 class ShMtBendLine : public ShMtBaseBendLine,
@@ -6354,10 +6354,10 @@ public:
   ShMtBendLineParameters  m_params;
 
 public:
-  // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РЅРёС‡РµРіРѕ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°СЏ, СЌСЃРєРёР· РґР°РґРёРј РїРѕС‚РѕРј
-  // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°
+  // конструктор, просто запоминает параметры ничего не рассчитывая, эскиз дадим потом
+  // конструктор для использования в конструкторе процесса
   ShMtBendLine( const ShMtBendLineParameters &, IfUniqueName * un );
-  // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+  // конструктор дублирования
   ShMtBendLine( const ShMtBendLine & );
 
 public:
@@ -6365,17 +6365,17 @@ public:
 
   virtual double                            GetOwnerAbsAngle() const;
   virtual double                            GetOwnerValueBend() const;
-  virtual double                            GetOwnerAbsRadius() const;  // РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
-  virtual bool                              IsOwnerInternalRad() const;  // РїРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ?
-  virtual UnfoldType                        GetOwnerTypeUnfold() const;  // РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
-  virtual void                              SetOwnerTypeUnfold( UnfoldType t );  // Р·Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+  virtual double                            GetOwnerAbsRadius() const;  // внутренний радиус сгиба
+  virtual bool                              IsOwnerInternalRad() const;  // по внутреннему радиусу?
+  virtual UnfoldType                        GetOwnerTypeUnfold() const;  // дать тип развертки
+  virtual void                              SetOwnerTypeUnfold( UnfoldType t );  // задать тип развертки
   virtual bool                              GetOwnerFlagByBase() const;  //
   virtual void                              SetOwnerFlagByBase( bool val );        //
-  virtual double                            GetOwnerCoefficient() const;  // РєРѕСЌС„С„РёС†РёРµРЅС‚
-  virtual bool                              IfOwnerBaseChanged( IfComponent * trans );        // РµСЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
-  virtual double                            GetThickness() const;  // РґР°С‚СЊ С‚РѕР»С‰РёРЅСѓ
-  virtual void                              SetThickness( double );// Р·Р°РґР°С‚СЊ С‚РѕР»С‰РёРЅСѓ
-                                                                   // РїРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+  virtual double                            GetOwnerCoefficient() const;  // коэффициент
+  virtual bool                              IfOwnerBaseChanged( IfComponent * trans );        // если изменились какие либо параметры, и есть чтение коэф из базы, то прочитать базу
+  virtual double                            GetThickness() const;  // дать толщину
+  virtual void                              SetThickness( double );// задать толщину
+                                                                   // перед тем как заканчиваем редактирование
   virtual void                              EditingEnd( const IfSheetMetalOperation & iniObj, const IfComponent & editComp );
 
   virtual void                              SetParameters( const ShMtBaseBendParameters & );
@@ -6384,99 +6384,99 @@ public:
   virtual bool                              IsLeftSideFix();
   //---------------------------------------------------------------------------
   // IfCopibleObject
-  // РЎРѕР·РґР°С‚СЊ РєРѕРїРёСЋ РѕР±СЉРµРєС‚Р°
+  // Создать копию объекта
   virtual IfPartObjectCopy * CreateObjectCopy( IfComponent & compOwner ) const;
-  // РЎР»РµРґСѓРµС‚ РєРѕРїРёСЂРѕРІР°С‚СЊ РЅР° СѓРєР°Р·Р°РЅРЅРѕРј РєРѕРјРїРѕРЅРµРЅС‚Рµ
+  // Следует копировать на указанном компоненте
   virtual bool               NeedCopyOnComp( const IfComponent & component ) const;
-  virtual bool               IsAuxGeom() const { return false; } ///< Р­С‚Рѕ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ РіРµРѕРјРµС‚СЂРёСЏ?
-                                                                 /// РњРѕР¶РµС‚ Р»Рё РѕРїРµСЂР°С†РёСЏ РјРµРЅСЏС‚СЃСЏ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј РІ РјР°СЃСЃРёРІРµ
+  virtual bool               IsAuxGeom() const { return false; } ///< Это вспомогательная геометрия?
+                                                                 /// Может ли операция менятся по параметрам в массиве
   virtual bool               CanCopyByVarsTable() const { return false; }
 
   //---------------------------------------------------------------------------
   // IfCopibleOperation
-  // РњРѕР¶РЅРѕ Р»Рё РєРѕРїРёСЂРѕРІР°С‚СЊ СЌС‚Сѓ РѕРїРµСЂР°С†РёСЋ РєР°Рє-РЅРёР±СѓРґСЊ РёРЅР°С‡Рµ, РєСЂРѕРјРµ РєР°Рє РіРµРѕРјРµС‚СЂРёС‡РµСЃРєРё?
-  // Рў.Рµ. С‡РµСЂРµР· MakePureSolid РёР»Рё С‡РµСЂРµР· РёРЅС‚РµСЂС„РµР№СЃС‹ IfCopibleOperationOnPlaces,
-  // IfCopibleOperationOnEdges Рё С‚.Рґ.
+  // Можно ли копировать эту операцию как-нибудь иначе, кроме как геометрически?
+  // Т.е. через MakePureSolid или через интерфейсы IfCopibleOperationOnPlaces,
+  // IfCopibleOperationOnEdges и т.д.
   virtual bool            CanCopyNonGeometrically() const;
 
   //------------------------------------------------------------------------------
-  // РѕР±С‰РёРµ С„СѓРЅРєС†РёРё РѕР±СЉРµРєС‚Р° РґРµС‚Р°Р»Рё
-  virtual uint            GetObjType() const;                            // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-  virtual uint            GetObjClass() const;                            // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
-  virtual uint            OperationSubType() const; // РІРµСЂРЅСѓС‚СЊ РїРѕРґС‚РёРї РѕРїРµСЂР°С†РёРё
+  // общие функции объекта детали
+  virtual uint            GetObjType() const;                            // вернуть тип объекта
+  virtual uint            GetObjClass() const;                            // вернуть общий тип объекта
+  virtual uint            OperationSubType() const; // вернуть подтип операции
   virtual PrObject      & Duplicate() const;
 
-  virtual void            PrepareToBuild( const IfComponent & ); ///< РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
-  virtual void            PostBuild(); ///< РЅРµРєРёРµ РґРµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
-                                       /// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+  virtual void            PrepareToBuild( const IfComponent & ); ///< подготовиться к построению
+  virtual void            PostBuild(); ///< некие действия после построения
+                                       /// приготовить свое, характерное тело
   virtual uint            PrepareLocalSolid( MbCurve3D            & curve,
     RPArray<MbFace>      & mbFaces,
     MbSNameMaker         & nameMaker,
     MbSolid              & prevSolid,
-    MbBendValues         & params,        // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-    const IfComponent    * /*operOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-    const IfComponent    * /*bodyOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+    MbBendValues         & params,        // свои уже приготовленные параметры
+    const IfComponent    * /*operOwner*/, // компонент - владелец этой операции
+    const IfComponent    * /*bodyOwner*/, // компонент - владелец тела, над которым эта операция производиться
     WhatIsDone             wDone,
     uint                   idShellThread,
     MbSolid              *&currSolid );
-  // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+  // приготовить свои параметры
   virtual MbBendValues &  PrepareLocalParameters( const IfComponent * component );
 
-  // РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+  // набирает массив предупреждений из ресурса
   virtual void            WhatsWrong( WarningsArray & warnings );
-  virtual bool            IsValid() const;  // РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕР±СЉРµРєС‚Р°
+  virtual bool            IsValid() const;  // проверка определенности объекта
 
-                                            /// Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+                                            /// Возможно ли для параметра задавать допуск
   virtual bool            IsCanSetTolerance( const VarParameter & varParameter ) const;
-  /// Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+  /// Для параметра получить неуказанный предельный допуск
   virtual double          GetGeneralTolerance( const VarParameter & varParameter, GeneralToleranceType tType, ItToleranceReader & reader ) const;
-  /// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+  /// Является ли параметр угловым
   virtual bool            ParameterIsAngular( const VarParameter & varParameter ) const;
   virtual bool            CopyInnerProps( const IfPartObject& source,
     uint sourceSubObjectIndex,
     uint destSubObjectIndex ) override;
-  /// РќР°РґРѕ Р»Рё СЃРѕС…СЂР°РЅСЏС‚СЊ РєР°Рє РѕР±СЉРµРєС‚ Р±РµР· РёСЃС‚РѕСЂРёРё
+  /// Надо ли сохранять как объект без истории
   virtual bool            IsNeedSaveAsUnhistored( long version ) const override;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ IfHotPoints
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+  // Реализация IfHotPoints
+  /// Пересчитать местоположение хот-точки
   virtual void UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool );
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+  /// Создать хот-точки
   virtual void GetHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool );
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+  /// Пересчитать местоположение хот-точек
   virtual void UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     ShMtBendObject &         children ) override;
-  /// РњРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
+  /// Могут ли к объекту быть привязаны управляющие размеры
   virtual bool IsDimensionsAllowed() const;
-  /// РћР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// Обновить геометрию размеров объекта по хот-точкам
   virtual void UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     const PArray<OperationSpecificDispositionVariant>* pVariants );
-  /// РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
+  /// Ассоциировать постоянные размеры с переменными родителя
   virtual void AssignDimensionsVariables( const SFDPArray<PartObject>  & dimensions );
-  /// СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// создать размеры объекта по хот-точкам для дочерних объектов
   virtual void CreateChildrenDimensionsByHotPoints( IfUniqueName           * un,
     SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject & children );
-  /// РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// обновить геометрию размеров объекта по хот-точкам для дочерних объектов
   virtual void UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject         & children );
-  /// РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
+  /// Ассоциировать размеры дочерних объектов - сгибов
   virtual void AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & dimensions,
     ShMtBendObject        & children );
 
-  /// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+  /// изменить уникальное имя параметра
   virtual void              RenameUnique( IfUniqueName & un );
 
-  /// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+  /// Расчет дуги для пересчета угловых параметров по допуску
   virtual void UpdateMeasurePars( GeneralToleranceType gType, bool recalc );
 
 private:
@@ -6485,7 +6485,7 @@ private:
     ShMtBendObject * children );
 
 private:
-  void operator = ( const ShMtBendLine & ); // РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ
+  void operator = ( const ShMtBendLine & ); // не реализовано
 
                                             //  DECLARE_PERSISTENT_CLASS( ShMtBendLine )
   DECLARE_PERSISTENT_CLASS( ShMtBendLine )
@@ -6494,8 +6494,8 @@ private:
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РЅРёС‡РµРіРѕ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°СЏ, СЌСЃРєРёР· РґР°РґРёРј РїРѕС‚РѕРј
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°
+// конструктор, просто запоминает параметры ничего не рассчитывая, эскиз дадим потом
+// конструктор для использования в конструкторе процесса
 ShMtBendLine::ShMtBendLine( const ShMtBendLineParameters & _pars, IfUniqueName * un )
   : ShMtBaseBendLine( un ),
   m_params( _pars )
@@ -6506,7 +6506,7 @@ ShMtBendLine::ShMtBendLine( const ShMtBendLineParameters & _pars, IfUniqueName *
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+// конструктор дублирования
 // ---
 ShMtBendLine::ShMtBendLine( const ShMtBendLine & other )
   : ShMtBaseBendLine( other ),
@@ -6520,7 +6520,7 @@ ShMtBendLine::ShMtBendLine( const ShMtBendLine & other )
 // ---
 ShMtBendLine::ShMtBendLine( TapeInit )
   : ShMtBaseBendLine( tapeInit ),
-  m_params( nullptr ) // РїР°СЂР°РјРµС‚СЂС‹
+  m_params( nullptr ) // параметры
 {
 }
 
@@ -6529,7 +6529,7 @@ I_IMP_SOMETHING_FUNCS_AR( ShMtBendLine )
 
 
 //------------------------------------------------------------------------------
-// Р·Р°РїСЂРѕСЃ РЅР° РїРѕР»СѓС‡РµРЅРёРµ РёРЅС‚РµСЂС„РµР№СЃР°
+// запрос на получение интерфейса
 // ---
 // IfSomething * ShMtBendLine::QueryInterface ( uint iid ) {
 //   return ShMtBaseBendLine::QueryInterface( iid );
@@ -6541,7 +6541,7 @@ I_IMP_END_QI_FROM_BASE( ShMtBaseBendLine );
 
 
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ РєРѕРїРёСЋ РѕР±СЉРµРєС‚Р° - РєРѕРїРёСЋ СѓСЃР»РѕРІРЅРѕРіРѕ РёР·РѕР±СЂР°Р¶РЅРЅРёСЏ СЂРµР·СЊР±С‹
+// Создать копию объекта - копию условного изображнния резьбы
 // ---
 IfPartObjectCopy * ShMtBendLine::CreateObjectCopy( IfComponent & compOwner ) const
 {
@@ -6550,7 +6550,7 @@ IfPartObjectCopy * ShMtBendLine::CreateObjectCopy( IfComponent & compOwner ) con
 
 
 //------------------------------------------------------------------------------
-// РЎР»РµРґСѓРµС‚ РєРѕРїРёСЂРѕРІР°С‚СЊ РЅР° СѓРєР°Р·Р°РЅРЅРѕРј РєРѕРјРїРѕРЅРµРЅС‚Рµ
+// Следует копировать на указанном компоненте
 // ---
 bool ShMtBendLine::NeedCopyOnComp( const IfComponent & component ) const
 {
@@ -6559,20 +6559,20 @@ bool ShMtBendLine::NeedCopyOnComp( const IfComponent & component ) const
 
 
 //------------------------------------------------------------------------------
-// РњРѕР¶РЅРѕ Р»Рё РєРѕРїРёСЂРѕРІР°С‚СЊ СЌС‚Сѓ РѕРїРµСЂР°С†РёСЋ РєР°Рє-РЅРёР±СѓРґСЊ РёРЅР°С‡Рµ, РєСЂРѕРјРµ РєР°Рє РіРµРѕРјРµС‚СЂРёС‡РµСЃРєРё?
-// Рў.Рµ. С‡РµСЂРµР· MakePureSolid РёР»Рё С‡РµСЂРµР· РёРЅС‚РµСЂС„РµР№СЃС‹ IfCopibleOperationOnPlaces,
-// IfCopibleOperationOnEdges Рё С‚.Рґ.
+// Можно ли копировать эту операцию как-нибудь иначе, кроме как геометрически?
+// Т.е. через MakePureSolid или через интерфейсы IfCopibleOperationOnPlaces,
+// IfCopibleOperationOnEdges и т.д.
 // ---
 bool ShMtBendLine::CanCopyNonGeometrically() const
 {
-  // РџРѕРєР° С‚РѕР»СЊРєРѕ РіРµРѕРјРµС‚СЂРёС‡РµСЃРєРё.
+  // Пока только геометрически.
   return false;
 }
 
 
-uint ShMtBendLine::GetObjType()  const { return ot_ShMtBendLine; } // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-uint ShMtBendLine::GetObjClass() const { return oc_ShMtBendLine; } // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
-uint ShMtBendLine::OperationSubType() const { return bo_Union; }          // РІРµСЂРЅСѓС‚СЊ РїРѕРґС‚РёРї РѕРїРµСЂР°С†РёРё
+uint ShMtBendLine::GetObjType()  const { return ot_ShMtBendLine; } // вернуть тип объекта
+uint ShMtBendLine::GetObjClass() const { return oc_ShMtBendLine; } // вернуть общий тип объекта
+uint ShMtBendLine::OperationSubType() const { return bo_Union; }          // вернуть подтип операции
 
                                                                           //-----------------------------------------------------------------------------
                                                                           //
@@ -6584,7 +6584,7 @@ PrObject & ShMtBendLine::Duplicate() const
 
 
 //------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+// задать параметры
 // ---
 void ShMtBendLine::SetParameters( const ShMtBaseBendParameters & p ) {
   m_params = (ShMtBendLineParameters&)p;
@@ -6592,7 +6592,7 @@ void ShMtBendLine::SetParameters( const ShMtBaseBendParameters & p ) {
 
 
 //------------------------------------------------------------------------------
-// РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+// получить параметры
 // ---
 ShMtBaseBendParameters & ShMtBendLine::GetParameters() const {
   return const_cast<ShMtBendLineParameters&>(m_params);
@@ -6600,7 +6600,7 @@ ShMtBaseBendParameters & ShMtBendLine::GetParameters() const {
 
 
 //------------------------------------------------------------------------------
-// РїРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+// перед тем как заканчиваем редактирование
 // ---
 void ShMtBendLine::EditingEnd( const IfSheetMetalOperation & iniObj, const IfComponent & editComp ) {
   IFPTR( ShMtBendLine ) ini( const_cast<IfSheetMetalOperation*>(&iniObj) );
@@ -6611,7 +6611,7 @@ void ShMtBendLine::EditingEnd( const IfSheetMetalOperation & iniObj, const IfCom
 
 
 //------------------------------------------------------------------------------
-// РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕРїРµСЂР°С†РёРё
+// проверка определенности операции
 // ---
 bool ShMtBendLine::IsValid() const {
   bool res = ShMtBaseBendLine::IsValid();
@@ -6623,7 +6623,7 @@ bool ShMtBendLine::IsValid() const {
 
 
 //------------------------------------------------------------------------------
-// РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+// набирает массив предупреждений из ресурса
 // ---
 void ShMtBendLine::WhatsWrong( WarningsArray & warnings ) {
   ShMtBaseBendLine::WhatsWrong( warnings );
@@ -6641,7 +6641,7 @@ void ShMtBendLine::WhatsWrong( WarningsArray & warnings ) {
 //
 //---
 double ShMtBendLine::GetThickness() const {
-  return m_params.m_thickness;    // С‚РѕР»С‰РёРЅР°
+  return m_params.m_thickness;    // толщина
 }
 
 
@@ -6649,7 +6649,7 @@ double ShMtBendLine::GetThickness() const {
 //
 //---
 void ShMtBendLine::SetThickness( double h ) {
-  m_params.m_thickness = h;    // С‚РѕР»С‰РёРЅР°
+  m_params.m_thickness = h;    // толщина
 }
 
 
@@ -6657,12 +6657,12 @@ void ShMtBendLine::SetThickness( double h ) {
 //
 //---
 double ShMtBendLine::GetOwnerAbsRadius() const {
-  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // внутренний радиус сгиба
 }
 
 
 //---------------------------------------------------------------------------------
-// РљРѕСЌС„С„РёС†РёРµРЅС‚, РѕРїСЂРµРґРµР»СЏСЋС‰РёР№ РїРѕР»РѕР¶РµРЅРёРµ РЅРµР№С‚СЂР°Р»СЊРЅРѕРіРѕ СЃР»РѕСЏ
+// Коэффициент, определяющий положение нейтрального слоя
 //---
 double ShMtBendLine::GetOwnerValueBend() const {
   double val;
@@ -6675,12 +6675,12 @@ double ShMtBendLine::GetOwnerValueBend() const {
 //
 //---
 double ShMtBendLine::GetOwnerAbsAngle() const {
-  return  m_params.GetAbsAngle();     // СѓРіРѕР» СЃРіРёР±Р°
+  return  m_params.GetAbsAngle();     // угол сгиба
 }
 
 
 //---------------------------------------------------------------------------------
-// РїРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ
+// по внутреннему радиусу
 //---
 bool ShMtBendLine::IsOwnerInternalRad() const {
   return m_params.m_internal;
@@ -6696,7 +6696,7 @@ double ShMtBendLine::GetOwnerCoefficient() const {
 
 
 //---------------------------------------------------------------------------------
-// РµСЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
+// если изменились какие либо параметры, и есть чтение коэф из базы, то прочитать базу
 //---
 bool ShMtBendLine::IfOwnerBaseChanged( IfComponent * trans ) {
   return m_params.ReadBaseIfChanged( trans );
@@ -6704,7 +6704,7 @@ bool ShMtBendLine::IfOwnerBaseChanged( IfComponent * trans ) {
 
 
 //---------------------------------------------------------------------------------
-// РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+// дать тип развертки
 //---
 UnfoldType ShMtBendLine::GetOwnerTypeUnfold() const {
   return m_params.m_typeUnfold;
@@ -6712,7 +6712,7 @@ UnfoldType ShMtBendLine::GetOwnerTypeUnfold() const {
 
 
 //---------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+// задать тип развертки
 //---
 void ShMtBendLine::SetOwnerTypeUnfold( UnfoldType t ) {
   m_params.m_typeUnfold = t;
@@ -6736,15 +6736,15 @@ bool ShMtBendLine::GetOwnerFlagByBase() const {
 
 
 //------------------------------------------------------------------------------
-// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+// приготовить свои параметры
 // ---
 MbBendValues & ShMtBendLine::PrepareLocalParameters( const IfComponent * component ) {
   MbBendOverSegValues * params = new MbBendOverSegValues();
   IfComponent * comp = const_cast<IfComponent*>(component);
-  m_params.ReadBaseIfChanged( comp ); // РµСЃР»Рё РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РІРµСЂС‚РєРё Р±СЂР°С‚СЊ РёР· Р±Р°Р·С‹, С‚Рѕ РїРµСЂРµС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ, РµСЃР»Рё РЅР°РґРѕ
+  m_params.ReadBaseIfChanged( comp ); // если параметры развертки брать из базы, то перечитать базу, если надо
   m_params.GetValues( *params );
 
-  // CC K8 РІ СЃС‚Р°СЂС‹С… РІРµСЂСЃРёСЏС… РІС‹С‡РёСЃР»РµРЅРёРµ СЃРјРµС‰РµРЅРёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ СЃСЂР°Р·Сѓ
+  // CC K8 в старых версиях вычисление смещения производится сразу
   if ( GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0800000BL )
     m_params.CalcAfterValues( *params );
 
@@ -6753,16 +6753,16 @@ MbBendValues & ShMtBendLine::PrepareLocalParameters( const IfComponent * compone
 
 
 //------------------------------------------------------------------------------
-// РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
+// подготовиться к построению
 //---
-void ShMtBendLine::PrepareToBuild( const IfComponent & operOwner ) // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
+void ShMtBendLine::PrepareToBuild( const IfComponent & operOwner ) // компонент - владелец этой операции
 {
   creatorBends = new CreatorForBendUnfoldParams( *this, (IfComponent*)&operOwner );
 }
 
 
 //------------------------------------------------------------------------------
-// РЅРµРєРёРµ РґРµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
+// некие действия после построения
 //---
 void ShMtBendLine::PostBuild()
 {
@@ -6772,15 +6772,15 @@ void ShMtBendLine::PostBuild()
 
 
 //---------------------------------------------------------------------------------
-// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+// приготовить свое, характерное тело
 //---
 uint ShMtBendLine::PrepareLocalSolid( MbCurve3D            & curve,
   RPArray<MbFace>      & mbFaces,
   MbSNameMaker         & nameMaker,
   MbSolid              & prevSolid,
-  MbBendValues         & params,    // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-  const IfComponent    * operOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-  const IfComponent    * bodyOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+  MbBendValues         & params,    // свои уже приготовленные параметры
+  const IfComponent    * operOwner, // компонент - владелец этой операции
+  const IfComponent    * bodyOwner, // компонент - владелец тела, над которым эта операция производиться
   WhatIsDone             wDone,
   uint                   idShellThread,
   MbSolid              *&result )
@@ -6797,22 +6797,22 @@ uint ShMtBendLine::PrepareLocalSolid( MbCurve3D            & curve,
         creatorBends->m_prepare = wDone != wd_Phantom;
         creatorBends->GetParams( params, m_params.m_dirAngle );
       }
-      // CC K8 РґР»СЏ РЅРѕРІС‹С… РІРµСЂСЃРёР№ РІС‹С‡РёСЃР»РµРЅРёРµ СЃРјРµС‰РµРЅРёСЏ РЅР°РґРѕ РїСЂРѕРёР·РІРѕРґРёС‚СЊ РІ СЃР°РјРѕРј РєРѕРЅС†Рµ
+      // CC K8 для новых версий вычисление смещения надо производить в самом конце
       if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
         m_params.CalcAfterValues( (MbBendOverSegValues&)params );
 
       if ( IsValidParamBaseTable() ) {
-        codeError = ::BendSheetSolidOverSegment( prevSolid,                       // РёСЃС…РѕРґРЅРѕРµ С‚РµР»Рѕ
+        codeError = ::BendSheetSolidOverSegment( prevSolid,                       // исходное тело
           wDone == wd_Phantom ? cm_Copy :
-          cm_KeepHistory,                  // РќР“ СЂР°Р±РѕС‚Р°С‚СЊ СЃ РєРѕРїРёРµР№ РѕР±РѕР»РѕС‡РєРё РёСЃС…РѕРґРЅРѕРіРѕ С‚РµР»Р°
-          mbFaces,                         // РёР·РіРёР±Р°РµРјР°СЏ РіСЂР°РЅСЊ
-          curve,                           // СЂРµРїРµСЂ, РІ РєРѕС‚РѕСЂРѕРј Р»РµР¶РёС‚ РѕС‚СЂРµР·РѕРє
-                                           /*РСЃРїСЂР°РІР»РµРЅРёРµ РѕС€РёР±РєРё 40270*/
-          GetObjVersion().GetVersionContainer().GetAppVersion() > 0x0C000001L || GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0A000001L ? false : IsStraighten(),                  // РіРЅСѓС‚СЊ
-          (MbBendOverSegValues&)params,    // РїР°СЂР°РјРµС‚СЂС‹ Р»РёСЃС‚РѕРІРѕРіРѕ С‚РµР»Р°
-          nameMaker,                            // РёРјРµРЅРѕРІР°С‚РµР»СЊ
-          result );                        // СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµРµ С‚РµР»Рѕ
-                                           // РЅР°РґРѕ Р·Р°РїРѕРјРЅРёС‚СЊ РІСЃРµ СЃРіРёР±С‹ Рё РёС… СЂР°РґРёСѓСЃР°
+          cm_KeepHistory,                  // НГ работать с копией оболочки исходного тела
+          mbFaces,                         // изгибаемая грань
+          curve,                           // репер, в котором лежит отрезок
+                                           /*Исправление ошибки 40270*/
+          GetObjVersion().GetVersionContainer().GetAppVersion() > 0x0C000001L || GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0A000001L ? false : IsStraighten(),                  // гнуть
+          (MbBendOverSegValues&)params,    // параметры листового тела
+          nameMaker,                            // именователь
+          result );                        // результирующее тело
+                                           // надо запомнить все сгибы и их радиуса
         if ( creatorBends && wDone != wd_Phantom )
           creatorBends->SetResult( result );
       }
@@ -6824,7 +6824,7 @@ uint ShMtBendLine::PrepareLocalSolid( MbCurve3D            & curve,
 
 
 //------------------------------------------------------------------------------
-// Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+// Возможно ли для параметра задавать допуск
 // ---
 bool ShMtBendLine::IsCanSetTolerance( const VarParameter & varParameter ) const
 {
@@ -6843,7 +6843,7 @@ bool ShMtBendLine::IsCanSetTolerance( const VarParameter & varParameter ) const
 
 
 //------------------------------------------------------------------------------
-// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+// Является ли параметр угловым
 // ---
 bool ShMtBendLine::ParameterIsAngular( const VarParameter & varParameter ) const
 {
@@ -6872,15 +6872,15 @@ bool ShMtBendLine::CopyInnerProps( const IfPartObject& source,
 
 
 //------------------------------------------------------------------------------
-// Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+// Для параметра получить неуказанный предельный допуск
 // ---
 double ShMtBendLine::GetGeneralTolerance( const VarParameter & varParameter, GeneralToleranceType tType, ItToleranceReader & reader ) const
 {
   if ( &varParameter == &const_cast<ShMtBendLineParameters&>(m_params).GetAngleVar() )
   {
     //    double angle = m_params.m_typeAngle ? m_params.GetAngle() : 180 - m_params.GetAngle();
-    // CC K14 Р”Р»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїСѓСЃРєР° РёСЃРїРѕР»СЊР·СѓРµРј СЂР°РґРёСѓСЃ. РЎРѕРіР»Р°СЃРѕРІР°РЅРѕ СЃ Р‘СѓР»РіР°РєРѕРІС‹Рј
-    return reader.GetTolerance( m_params.m_distance, // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    // CC K14 Для получения допуска используем радиус. Согласовано с Булгаковым
+    return reader.GetTolerance( m_params.m_distance, // внешний радиус BUG 62631
       vd_angle,
       tType );
   }
@@ -6889,7 +6889,7 @@ double ShMtBendLine::GetGeneralTolerance( const VarParameter & varParameter, Gen
 
 
 //------------------------------------------------------------------------------------
-/// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+/// Расчет дуги для пересчета угловых параметров по допуску
 /**
 // \method    InitGeneralTolerances
 // \access    public
@@ -6901,7 +6901,7 @@ void ShMtBendLine::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
 {
   if ( recalc )
   {
-    // РЈ СЃРіРёР±РѕРІ Р±СЂР°С‚СЊ РЅР°РёРјРµРЅСЊС€РёР№ СЂР°РґРёСѓСЃ
+    // У сгибов брать наименьший радиус
     double rad = MB_MAXDOUBLE;
     for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
     {
@@ -6910,16 +6910,16 @@ void ShMtBendLine::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
         rad = rad_i;
     }
 
-    m_params.m_distance = rad + GetThickness(); // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    m_params.m_distance = rad + GetThickness(); // внешний радиус BUG 62631
   }
 
   VariableParametersOwner::UpdateMeasurePars( gType, recalc );
 }
 
 
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+// Создать хот-точки
 // ---
 void ShMtBendLine::GetHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -6929,7 +6929,7 @@ void ShMtBendLine::GetHotPoints( RPArray<HotPointParam> & hotPoints,
 {
   ShMtBaseBendLine::GetHotPoints( hotPoints, editComponent, topComponent, type, pD3DrawTool );
 
-  hotPoints.Add( new HotPointBendLineAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // СѓРіРѕР» СЃРіРёР±Р°
+  hotPoints.Add( new HotPointBendLineAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // угол сгиба
 }
 
 
@@ -6949,7 +6949,7 @@ std::unique_ptr<HotPointBendLineOperUtil> ShMtBendLine::GetHotPointUtil( MbBendO
     if ( curveEdge )
     {
       PArray<MbFace> arrayFaces( 0, 1, false );
-      CollectFaces( arrayFaces, editComponent, children ? children->m_extraName : -1 ); // СЃРѕР±СЂР°С‚СЊ РІСЃРµ РіСЂР°РЅРё
+      CollectFaces( arrayFaces, editComponent, children ? children->m_extraName : -1 ); // собрать все грани
       if ( arrayFaces.Count() ) {
         params = static_cast<MbBendOverSegValues*>(&PrepareLocalParameters( &editComponent ));
 
@@ -6961,10 +6961,10 @@ std::unique_ptr<HotPointBendLineOperUtil> ShMtBendLine::GetHotPointUtil( MbBendO
         }
 
         if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
-          // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+          // Смещение посчитать после всех вычислений
           static_cast<ShMtBendLineParameters&>(GetParameters()).CalcAfterValues( *params );
 
-        // KA V17 Р’С‹Р±РёСЂР°С‚СЊ РјРѕР¶РЅРѕ Р»СЋР±С‹Рµ РіСЂР°РЅРё, РІ С‚РѕРј С‡РёСЃР»Рµ РЅР° РєРѕС‚РѕСЂС‹С… СЃРіРёР±С‹ РЅРµ СЃРѕР·РґР°СЋС‚СЃСЏ. РџРѕСЌС‚РѕРјСѓ Р±СЂР°С‚СЊ 0-РІС‹СЋ РіСЂР°РЅСЊ РґР»СЏ РїРѕСЃС‚СЂРѕРµРЅРёСЏ С…С‚ - РЅРµР»СЊР·СЏ
+        // KA V17 Выбирать можно любые грани, в том числе на которых сгибы не создаются. Поэтому брать 0-выю грань для построения хт - нельзя
         for ( const auto & face : arrayFaces )
         {
           util.reset( new HotPointBendLineOperUtil( face, curveEdge, *params, IsStraighten(), GetThickness() ) );
@@ -6981,7 +6981,7 @@ std::unique_ptr<HotPointBendLineOperUtil> ShMtBendLine::GetHotPointUtil( MbBendO
 
 //------------------------------------------------------------------------------
 /**
-РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+Пересчитать местоположение хот-точки
 \param hotPoints -
 \param type -
 \param pD3DrawTool -
@@ -6997,8 +6997,8 @@ void ShMtBendLine::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
     std::unique_ptr<HotPointBendLineOperUtil> util( GetHotPointUtil( params,
       hotPoints[0]->GetEditComponent( false/*addref*/ ),
       m_bendObjects.Count() ? m_bendObjects[0] : nullptr ) );
-    // РЁРђ K11 6.2.2009 РћС€РёР±РєР° в„–38858:
-    // РЁРђ K11                                                    nullptr );
+    // ША K11 6.2.2009 Ошибка №38858:
+    // ША K11                                                    nullptr );
     if ( util )
     {
       ShMtBaseBendLine::UpdateHotPoints( *util, hotPoints, *params, pD3DrawTool );
@@ -7014,10 +7014,10 @@ void ShMtBendLine::UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+// Пересчитать местоположение хот-точек
 /**
-\param hotPoints - С…РѕС‚-С‚РѕС‡РµРєРё
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoints - хот-точеки
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 void ShMtBendLine::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
@@ -7025,14 +7025,14 @@ void ShMtBendLine::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
 {
   bool del = true;
 
-  // С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР° РѕС‚РѕР±СЂР°Р¶Р°РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃРіРёР± РІС‹РїРѕР»РЅРµРЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј СЃР°РјРѕРіРѕ СЃРіРёР±Р°
+  // хот-точку радиуса отображаем только если сгиб выполнен по параметрам самого сгиба
   if ( !children.m_byOwner )
   {
     for ( size_t i = 0, c = hotPoints.Count(); i < c; i++ )
     {
       HotPointParam * hotPoint = hotPoints[i];
 
-      if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+      if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // радиус сгиба
       {
         MbBendOverSegValues *      params = nullptr;
         std::unique_ptr<HotPointBendLineOperUtil> util( GetHotPointUtil( params,
@@ -7060,14 +7060,14 @@ void ShMtBendLine::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
       hotPoints[i]->SetBasePoint( nullptr );
     }
 }
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 
 
 //------------------------------------------------------------------------------
 /**
-РњРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
-\param  РЅРµС‚
-\return РЅРµС‚
+Могут ли к объекту быть привязаны управляющие размеры
+\param  нет
+\return нет
 */
 //---
 
@@ -7079,10 +7079,10 @@ bool ShMtBendLine::IsDimensionsAllowed() const
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param  dimensions - СЂР°Р·РјРµСЂС‹
-\param  hotPoints  - С…РѕС‚-С‚РѕС‡РєРё
-\return РЅРµС‚
+Обновить геометрию размеров объекта по хот-точкам
+\param  dimensions - размеры
+\param  hotPoints  - хот-точки
+\return нет
 */
 //---
 void ShMtBendLine::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor>  & dimensions,
@@ -7108,9 +7108,9 @@ void ShMtBendLine::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimens
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ РїРѕСЃС‚РѕСЏРЅРЅС‹Рµ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
-\param  dimensions - СЂР°Р·РјРµСЂС‹
-\return РЅРµС‚
+Ассоциировать постоянные размеры с переменными родителя
+\param  dimensions - размеры
+\return нет
 */
 //---
 void ShMtBendLine::AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions )
@@ -7123,11 +7123,11 @@ void ShMtBendLine::AssignDimensionsVariables( const SFDPArray<PartObject> & dime
 
 //------------------------------------------------------------------------------
 /**
-СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+создать размеры объекта по хот-точкам для дочерних объектов
 \param un -
 \param dimensions -
 \param hotPoints -
-\return РЅРµС‚
+\return нет
 */
 //---
 void ShMtBendLine::CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
@@ -7149,18 +7149,18 @@ void ShMtBendLine::CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
 
 //------------------------------------------------------------------------------
 /**
-РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+обновить геометрию размеров объекта по хот-точкам для дочерних объектов
 \param dimensions -
 \param hotPoints -
 \param children -
-\return РЅРµС‚
+\return нет
 */
 //---
 void ShMtBendLine::UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
   const RPArray<HotPointParam> & hotPoints,
   ShMtBendObject & children )
 {
-  // С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР° РѕС‚РѕР±СЂР°Р¶Р°РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃРіРёР± РІС‹РїРѕР»РЅРµРЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј СЃР°РјРѕРіРѕ СЃРіРёР±Р°
+  // хот-точку радиуса отображаем только если сгиб выполнен по параметрам самого сгиба
   if ( !children.m_byOwner && hotPoints.Count() )
   {
     IFPTR( OperationCircularDimension ) dimRad( ::FindGnrDimension( dimensions, ehp_ShMtBendObjectRadius, false ) );
@@ -7184,10 +7184,10 @@ void ShMtBendLine::UpdateChildrenDimensionsByHotPoints( const SFDPArray<Generati
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
+Ассоциировать размеры дочерних объектов - сгибов
 \param dimensions -
 \param children -
-\return РЅРµС‚
+\return нет
 */
 //---
 void ShMtBendLine::AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & dimensions,
@@ -7198,7 +7198,7 @@ void ShMtBendLine::AssingChildrenDimensionsVariables( const SFDPArray<PartObject
 
 
 //-----------------------------------------------------------------------------
-/// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+/// изменить уникальное имя параметра
 //---
 void ShMtBendLine::RenameUnique( IfUniqueName & un ) {
   ShMtBaseBendLine::RenameUnique( un );
@@ -7219,7 +7219,7 @@ IMP_PROC_REGISTRATION( ShMtBendLine );
 
 //--------------------------------------------------------------------------------
 /**
-РќРµРѕР±С…РѕРґРёРјРѕ Р»Рё СЃРѕС…СЂР°РЅРµРЅРёРµ Р±РµР· РёСЃС‚РѕСЂРёРё
+Необходимо ли сохранение без истории
 \param version
 \return bool
 */
@@ -7231,48 +7231,48 @@ bool ShMtBendLine::IsNeedSaveAsUnhistored( long version ) const
 
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ РёР· РїРѕС‚РѕРєР°
+// Чтение из потока
 // ---
 void ShMtBendLine::Read( reader &in, ShMtBendLine * obj ) {
   ReadBase( in, static_cast<ShMtBaseBendLine *>(obj) );
-  in >> obj->m_params;  // РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё РІС‹РґР°РІР»РёРІР°РЅРёСЏ
+  in >> obj->m_params;  // параметры операции выдавливания
 }
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РІ РїРѕС‚РѕРє
+// Запись в поток
 // ---
 void ShMtBendLine::Write( writer &out, const ShMtBendLine * obj ) {
   if ( out.AppVersion() < 0x06000033L )
-    out.setState( io::cantWriteObject ); // СЃРїРµС†РёР°Р»СЊРЅРѕ РІРІРµРґРµРЅРЅС‹Р№ С‚РёРї РѕС€РёР±РѕС‡РЅРѕР№ СЃРёС‚СѓР°С†РёРё
+    out.setState( io::cantWriteObject ); // специально введенный тип ошибочной ситуации
   else {
     WriteBase( out, static_cast<const ShMtBaseBendLine *>(obj) );
-    out << obj->m_params;  // РїР°СЂР°РјРµС‚СЂС‹ РѕРїРµСЂР°С†РёРё РІС‹РґР°РІР»РёРІР°РЅРёСЏ
+    out << obj->m_params;  // параметры операции выдавливания
   }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// РєР»Р°СЃСЃР° РѕРїРµСЂР°С†РёР№ РїРѕРґСЃРµС‡РєР°
+// класса операций подсечка
 //
 ////////////////////////////////////////////////////////////////////////////////
 class ShMtBendHook : public ShMtBaseBendLine,
   public IfShMtBendHook {
 public:
   ShMtBendHookParameters  m_params;
-  ReferenceContainerFix   m_upToObject;      // РѕР±СЉРµРєС‚С‹ РґРѕ РєРѕС‚РѕСЂС‹С… СЃС‚СЂРѕРёРј
+  ReferenceContainerFix   m_upToObject;      // объекты до которых строим
 
 public:
   I_DECLARE_SOMETHING_FUNCS;
 
-  // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°
+  // конструктор для использования в конструкторе процесса
   ShMtBendHook( const ShMtBendHookParameters &, IfUniqueName * un );
-  // РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+  // конструктор дублирования
   ShMtBendHook( const ShMtBendHook & );
 
 public:
-  virtual bool                     HasBendIgnoreOwner() const; // РµСЃР»Рё true, С‚Рѕ СЃРіРёР± РѕС‚ СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё РјРѕР¶РµС‚ РёРјРµС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РѕС‚Р»РёС‡РЅС‹Рµ РѕС‚ РїР°РїС‹, РґР°Р¶Рµ РµСЃР»Рё РѕРЅ СЃРѕР·РґР°РЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј РїР°РїС‹
+  virtual bool                     HasBendIgnoreOwner() const; // если true, то сгиб от этой операции может иметь параметры отличные от папы, даже если он создан по параметрам папы
 #ifdef MANY_THICKNESS_BODY_SHMT
   virtual bool                     IsSuitedObject( const WrapSomething & );
 #else
@@ -7280,127 +7280,127 @@ public:
 #endif
   virtual double                   GetOwnerAbsAngle() const;
   virtual double                   GetOwnerValueBend() const;
-  virtual double                   GetOwnerAbsRadius() const;    // РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
-  virtual bool                     IsOwnerInternalRad() const;    // РїРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ?
-  virtual UnfoldType               GetOwnerTypeUnfold() const;    // РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
-  virtual void                     SetOwnerTypeUnfold( UnfoldType t );  // Р·Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+  virtual double                   GetOwnerAbsRadius() const;    // внутренний радиус сгиба
+  virtual bool                     IsOwnerInternalRad() const;    // по внутреннему радиусу?
+  virtual UnfoldType               GetOwnerTypeUnfold() const;    // дать тип развертки
+  virtual void                     SetOwnerTypeUnfold( UnfoldType t );  // задать тип развертки
   virtual bool                     GetOwnerFlagByBase() const;  //
   virtual void                     SetOwnerFlagByBase( bool val );        //
-  virtual double                   GetOwnerCoefficient() const;  // РєРѕСЌС„С„РёС†РёРµРЅС‚
-  virtual bool                     IfOwnerBaseChanged( IfComponent * trans );        // РµСЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
-  virtual double                   GetThickness() const;  // РґР°С‚СЊ С‚РѕР»С‰РёРЅСѓ
-  virtual void                     SetThickness( double );// Р·Р°РґР°С‚СЊ С‚РѕР»С‰РёРЅСѓ
-                                                          /// РїРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+  virtual double                   GetOwnerCoefficient() const;  // коэффициент
+  virtual bool                     IfOwnerBaseChanged( IfComponent * trans );        // если изменились какие либо параметры, и есть чтение коэф из базы, то прочитать базу
+  virtual double                   GetThickness() const;  // дать толщину
+  virtual void                     SetThickness( double );// задать толщину
+                                                          /// перед тем как заканчиваем редактирование
   virtual void                     EditingEnd( const IfSheetMetalOperation & iniObj, const IfComponent & editComp );
 
   virtual void                     SetParameters( const ShMtBaseBendParameters & );
   virtual ShMtBaseBendParameters & GetParameters() const;
   virtual bool                     IsLeftSideFix();
-  //--------------- РѕР±С‰РёРµ С„СѓРЅРєС†РёРё РѕР±СЉРµРєС‚Р° РґРµС‚Р°Р»Рё -------------------------------//
-  virtual uint                     GetObjType() const;                            // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-  virtual uint                     GetObjClass() const;                            // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
+  //--------------- общие функции объекта детали -------------------------------//
+  virtual uint                     GetObjType() const;                            // вернуть тип объекта
+  virtual uint                     GetObjClass() const;                            // вернуть общий тип объекта
   virtual PrObject               & Duplicate() const;
 
-  virtual bool                     RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath ); // РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+  virtual bool                     RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath ); // восстановить связи
   virtual void                     ClearReferencedObjects( bool soft );
-  virtual bool                     ChangeReferences( ChangeReferencesData & changedRefs ); ///< Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
-  virtual bool                     IsValid() const;  // РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕР±СЉРµРєС‚Р°
-  virtual void                     WhatsWrong( WarningsArray & ); // РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+  virtual bool                     ChangeReferences( ChangeReferencesData & changedRefs ); ///< Заменить ссылки на объекты
+  virtual bool                     IsValid() const;  // проверка определенности объекта
+  virtual void                     WhatsWrong( WarningsArray & ); // набирает массив предупреждений из ресурса
   virtual bool                     IsThisParent( uint8 relType, const WrapSomething & ) const;
-  virtual void                     PrepareToBuild( const IfComponent & ); ///< РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
-  virtual void                     PostBuild(); ///< РЅРµРєРёРµ РґРµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
+  virtual void                     PrepareToBuild( const IfComponent & ); ///< подготовиться к построению
+  virtual void                     PostBuild(); ///< некие действия после построения
   virtual bool                     CopyInnerProps( const IfPartObject& source,
     uint sourceSubObjectIndex,
     uint destSubObjectIndex ) override;
-  /// РќР°РґРѕ Р»Рё СЃРѕС…СЂР°РЅСЏС‚СЊ РєР°Рє РѕР±СЉРµРєС‚ Р±РµР· РёСЃС‚РѕСЂРёРё
+  /// Надо ли сохранять как объект без истории
   virtual bool                     IsNeedSaveAsUnhistored( long version ) const override;
 
-  /// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+  /// приготовить свое, характерное тело
   virtual uint            PrepareLocalSolid( MbCurve3D            & curve,
     RPArray<MbFace>      & mbFaces,
     MbSNameMaker         & name,
     MbSolid              & prevSolid,
-    MbBendValues         & params,        // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-    const IfComponent    * /*operOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-    const IfComponent    * /*bodyOwner*/, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+    MbBendValues         & params,        // свои уже приготовленные параметры
+    const IfComponent    * /*operOwner*/, // компонент - владелец этой операции
+    const IfComponent    * /*bodyOwner*/, // компонент - владелец тела, над которым эта операция производиться
     WhatIsDone             wDone,
     uint                   idShellThread,
     MbSolid              *&currSolid );
-  // РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+  // приготовить свои параметры
   virtual MbBendValues &  PrepareLocalParameters( const IfComponent * component );
 
-  // РґРѕР±Р°РІРёС‚СЊ РёР»Рё СѓРґР°Р»РёС‚СЊ UptoObject
+  // добавить или удалить UptoObject
   virtual bool                  SetResetUpToObject( const WrapSomething & );
   virtual const WrapSomething & GetUpToObject() const;
-  // СѓРґР°Р»РёС‚СЊ UptoObject
+  // удалить UptoObject
   virtual void                  ResetUpToObject();
 
-  /// Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+  /// Возможно ли для параметра задавать допуск
   virtual bool                  IsCanSetTolerance( const VarParameter & varParameter ) const;
-  /// Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+  /// Для параметра получить неуказанный предельный допуск
   virtual double                GetGeneralTolerance( const VarParameter & varParameter, GeneralToleranceType tType, ItToleranceReader & reader ) const;
-  /// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+  /// Является ли параметр угловым
   virtual bool                  ParameterIsAngular( const VarParameter & varParameter ) const;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ IfHotPoints
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+  // Реализация IfHotPoints
+  /// Создать хот-точки
   virtual void GetHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool );
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+  /// Пересчитать местоположение хот-точки
   virtual void UpdateHotPoints( RPArray<HotPointParam> & hotPoints,
     ActiveHotPoints          type,
     D3Draw &                 pD3DrawTool );
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
-  // step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+  /// Перерасчет при перетаскивании хот-точки
+  // step - шаг дискретности, для определения смещения с заданным пользователем шагом
   virtual bool ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
     double step, D3Draw & pD3DrawTool );
-  /// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+  /// Пересчитать местоположение хот-точек
   virtual void UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     ShMtBendObject &         children ) override;
 
-  // Р РµР°Р»РёР·Р°С†РёСЏ С…РѕС‚-С‚РѕС‡РµРє СЂР°РґРёСѓСЃРѕРІ СЃРіРёР±РѕРІ РѕС‚ ShMtStraighten
-  /// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+  // Реализация хот-точек радиусов сгибов от ShMtStraighten
+  /// Создать хот-точки (зарезервированы индексы с 5000 до 5999)
   virtual void GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
     IfComponent &            editComponent,
     IfComponent &            topComponent,
     ShMtBendObject &         children );
-  /// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+  /// Перерасчет при перетаскивании хот-точки
   virtual bool ChangeChildrenHotPoint( HotPointParam &  hotPoint,
     const MbVector3D &     vector,
     double           step,
     ShMtBendObject & children );
-  /// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+  /// изменить уникальное имя параметра
   virtual void RenameUnique( IfUniqueName & un );
 
-  /// РјРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
+  /// могут ли к объекту быть привязаны управляющие размеры
   virtual bool IsDimensionsAllowed() const;
-  /// Р°СЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
+  /// ассоциировать размеры с переменными родителя
   virtual void AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions );
-  /// СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// создать размеры объекта по хот-точкам
   virtual void CreateDimensionsByHotPoints( IfUniqueName * un,
     SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints );
-  /// РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+  /// обновить геометрию размеров объекта по хот-точкам
   virtual void UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     const PArray<OperationSpecificDispositionVariant>* pVariants );
 
-  /// РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
+  /// Ассоциировать размеры дочерних объектов - сгибов
   virtual void AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & dimensions,
     ShMtBendObject & children );
-  /// СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// создать размеры объекта по хот-точкам для дочерних объектов
   virtual void CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
     SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject & children );
-  /// РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+  /// обновить геометрию размеров объекта по хот-точкам для дочерних объектов
   virtual void UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     ShMtBendObject & children );
-  /// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+  /// Расчет дуги для пересчета угловых параметров по допуску
   virtual void UpdateMeasurePars( GeneralToleranceType gType, bool recalc );
 
 private:
@@ -7409,71 +7409,71 @@ private:
     IfComponent    & editComponent,
     ShMtBendObject * children );
 
-  /// РЎРїСЂСЏС‚Р°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+  /// Спрятать хот-точки
   void HideAllHotPoints( RPArray<HotPointParam> & hotPoints );
 
-  /// РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РІС‹СЃРѕС‚С‹
+  /// Обновить хот-точку высоты
   void UpdateDistanceExtrHotPoint( RPArray<HotPointParam> & hotPoints,
     HotPointBendHookOperUtil & util,
     MbBendValues secondBendParameters );
-  /// РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР°, СѓСЃС‚Р°РЅРѕРІРёРІ РµС‘ РЅР° СЃРіРёР±Рµ СЃРѕР·РґР°РЅРЅРѕРј РїРѕ РёСЃС…РѕРґРЅРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
+  /// Обновить хот-точку радиуса, установив её на сгибе созданном по исходному объекту
   void UpdateRadiusHotPointByBendObjects( RPArray<HotPointParam> & hotPoints,
     HotPointBendHookOperUtil & util,
     MbBendOverSegValues & bendParameters );
-  /// РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РїРµСЂРІРѕРј СЃРіРёР±Рµ
+  /// Следует ли производить расчеты хот-точки радиуса на первом сгибе
   bool IsRadiusHotPointByFirstBend();
-  /// РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РІС‚РѕСЂРѕРј СЃРіРёР±Рµ
+  /// Следует ли производить расчеты хот-точки радиуса на втором сгибе
   bool IsRadiusHotPointBySecondBend();
-  /// РџСЂРѕРёР·РІРµСЃС‚Рё РїРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР°, РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚
-  /// РїРѕСЃС‚СЂРѕРµРЅРёСЏ СЃРіРёР±РѕРІ РїРѕ РёСЃС…РѕРґРЅРѕРјСѓ РѕР±СЉРµРєС‚Сѓ РёР»Рё РЅРµС‚
+  /// Произвести перерасчет при перетаскивании хот-точки радиуса, в зависимости от
+  /// построения сгибов по исходному объекту или нет
   bool ChangeRadiusHotPointByBendObjects( HotPointParam & radiusHotPoint, const MbVector3D & vector,
     double step, D3Draw & pD3DrawTool );
 
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°СЃСЃС‚РѕСЏРЅРёСЏ
+  /// Обновить размер расстояния
   void UpdateLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
+  /// Обновить размер радиуса
   void UpdateRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints,
     int radiusHotPointId,
     EDimensionsIds radiusDimensionId,
     bool moveToInternal );
-  /// РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р°
+  /// Обновить размер угла
   void UpdateAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
     const RPArray<HotPointParam> & hotPoints );
 
-  /// РџРѕР»СѓС‡РёСЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРіР»Р°
+  /// Получиь параметры размера угла
   bool GetAngleDimensionParameters( const RPArray<HotPointParam> & hotPoints,
     MbCartPoint3D & dimensionCenter,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - СЃРЅР°СЂСѓР¶Рё
+  /// Получить параметры размера расстояния - снаружи
   bool GetLengthDimensionParametersByOut( const RPArray<HotPointParam> & hotPoints,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - РІРЅСѓС‚СЂРё
+  /// Получить параметры размера расстояния - внутри
   bool GetLengthDimensionParametersByIn( const RPArray<HotPointParam> & hotPoints,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - РїРѕР»РЅС‹Р№
+  /// Получить параметры размера расстояния - полный
   bool GetLengthDimensionParametersByAll( const RPArray<HotPointParam> & hotPoints,
     MbPlacement3D & dimensionPlacement,
     MbCartPoint3D & dimensionPoint1,
     MbCartPoint3D & dimensionPoint2 );
-  /// РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅРЅС‹
+  /// Обнулить размер длинны
   void ResetLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions );
-  /// РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅРЅС‹
+  /// Обнулить размер длинны
   void ResetAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions );
-  /// РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
+  /// Обнулить размер радиуса
   void ResetRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions, EDimensionsIds radiusDimensionId );
 
   bool GetRadiusDimensionParameters( HotPointBendLineRadiusParam * radiusHotPoint, bool moveToInternal,
     MbPlacement3D & dimensionPlacement, MbArc3D & dimensionArc );
 
 private:
-  void operator = ( const ShMtBendHook & ); // РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ
+  void operator = ( const ShMtBendHook & ); // не реализовано
 
   DECLARE_PERSISTENT_CLASS( ShMtBendHook )
 };
@@ -7481,8 +7481,8 @@ private:
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРѕСЃС‚Рѕ Р·Р°РїРѕРјРёРЅР°РµС‚ РїР°СЂР°РјРµС‚СЂС‹ РЅРёС‡РµРіРѕ РЅРµ СЂР°СЃСЃС‡РёС‚С‹РІР°СЏ, СЌСЃРєРёР· РґР°РґРёРј РїРѕС‚РѕРј
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ РїСЂРѕС†РµСЃСЃР°
+// конструктор, просто запоминает параметры ничего не рассчитывая, эскиз дадим потом
+// конструктор для использования в конструкторе процесса
 ShMtBendHook::ShMtBendHook( const ShMtBendHookParameters & _pars, IfUniqueName * un )
   : ShMtBaseBendLine( un ),
   m_upToObject( 1 ),
@@ -7494,7 +7494,7 @@ ShMtBendHook::ShMtBendHook( const ShMtBendHookParameters & _pars, IfUniqueName *
 
 
 //------------------------------------------------------------------------------
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСѓР±Р»РёСЂРѕРІР°РЅРёСЏ
+// конструктор дублирования
 // ---
 ShMtBendHook::ShMtBendHook( const ShMtBendHook & other )
   : ShMtBaseBendLine( other ),
@@ -7510,7 +7510,7 @@ ShMtBendHook::ShMtBendHook( const ShMtBendHook & other )
 ShMtBendHook::ShMtBendHook( TapeInit )
   : ShMtBaseBendLine( tapeInit ),
   m_upToObject( 1 ),
-  m_params( nullptr ) // РїР°СЂР°РјРµС‚СЂС‹
+  m_params( nullptr ) // параметры
 {
 }
 
@@ -7531,8 +7531,8 @@ IfSomething * ShMtBendHook::QueryInterface( unsigned int iid ) const {
 I_IMP_SOMETHING_FUNCS_AR( ShMtBendHook )
 
 
-uint ShMtBendHook::GetObjType()  const { return ot_ShMtBendHook; } // РІРµСЂРЅСѓС‚СЊ С‚РёРї РѕР±СЉРµРєС‚Р°
-uint ShMtBendHook::GetObjClass() const { return oc_ShMtBendHook; } // РІРµСЂРЅСѓС‚СЊ РѕР±С‰РёР№ С‚РёРї РѕР±СЉРµРєС‚Р°
+uint ShMtBendHook::GetObjType()  const { return ot_ShMtBendHook; } // вернуть тип объекта
+uint ShMtBendHook::GetObjClass() const { return oc_ShMtBendHook; } // вернуть общий тип объекта
 
                                                                    //-----------------------------------------------------------------------------
                                                                    //
@@ -7552,7 +7552,7 @@ bool ShMtBendHook::IsLeftSideFix() {
 
 
 //------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+// задать параметры
 // ---
 void ShMtBendHook::SetParameters( const ShMtBaseBendParameters & p ) {
   m_params = (ShMtBendHookParameters&)p;
@@ -7560,7 +7560,7 @@ void ShMtBendHook::SetParameters( const ShMtBaseBendParameters & p ) {
 
 
 //------------------------------------------------------------------------------
-// РїРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹
+// получить параметры
 // ---
 ShMtBaseBendParameters & ShMtBendHook::GetParameters() const {
   return const_cast<ShMtBendHookParameters&>(m_params);
@@ -7568,7 +7568,7 @@ ShMtBaseBendParameters & ShMtBendHook::GetParameters() const {
 
 
 //------------------------------------------------------------------------------
-// РїСЂРѕРІРµСЂРєР° РѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё РѕРїРµСЂР°С†РёРё
+// проверка определенности операции
 // ---
 bool ShMtBendHook::IsValid() const {
   bool res = ShMtBaseBendLine::IsValid() && m_params.IsValidParam();
@@ -7581,7 +7581,7 @@ bool ShMtBendHook::IsValid() const {
 
 
 //------------------------------------------------------------------------------
-// РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРІСЏР·Рё
+// восстановить связи
 // ---
 bool ShMtBendHook::RestoreReferences( PartRebuildResult &result, bool allRefs, CERst withMath )
 {
@@ -7595,7 +7595,7 @@ bool ShMtBendHook::RestoreReferences( PartRebuildResult &result, bool allRefs, C
 
 
   //------------------------------------------------------------------------------
-  // РћС‡РёСЃС‚РёС‚СЊ РѕРїРѕСЂРЅС‹Рµ РѕР±СЉРµРєС‚С‹ soft = true - С‚РѕР»СЊРєРѕ РІСЂР°РїРµСЂС‹ (РЅРµ С‚СЂРѕРіР°СЏ РёРјРµРЅР°)
+  // Очистить опорные объекты soft = true - только враперы (не трогая имена)
   // ---
 void ShMtBendHook::ClearReferencedObjects( bool soft )
 {
@@ -7605,7 +7605,7 @@ void ShMtBendHook::ClearReferencedObjects( bool soft )
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РјРµРЅРёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РѕР±СЉРµРєС‚С‹
+// Заменить ссылки на объекты
 // ---
 bool ShMtBendHook::ChangeReferences( ChangeReferencesData & changedRefs )
 {
@@ -7618,7 +7618,7 @@ bool ShMtBendHook::ChangeReferences( ChangeReferencesData & changedRefs )
 
 
 //--------------------------------------------------------------------------------
-// РґРѕР±Р°РІРёС‚СЊ РёР»Рё СѓРґР°Р»РёС‚СЊ UptoObject
+// добавить или удалить UptoObject
 //---
 bool ShMtBendHook::SetResetUpToObject( const WrapSomething & wrapper ) {
   bool noFind = m_upToObject.FindObject( wrapper ) == -1;
@@ -7641,7 +7641,7 @@ const WrapSomething & ShMtBendHook::GetUpToObject() const {
 
 
 //--------------------------------------------------------------------------------
-// СѓРґР°Р»РёС‚СЊ UptoObject
+// удалить UptoObject
 //---
 void ShMtBendHook::ResetUpToObject() {
   m_upToObject.SetObject( 0, nullptr );
@@ -7649,7 +7649,7 @@ void ShMtBendHook::ResetUpToObject() {
 
 
 //------------------------------------------------------------------------------
-// РЅР°Р±РёСЂР°РµС‚ РјР°СЃСЃРёРІ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№ РёР· СЂРµСЃСѓСЂСЃР°
+// набирает массив предупреждений из ресурса
 // ---
 void ShMtBendHook::WhatsWrong( WarningsArray & warnings ) {
   ShMtBaseBendLine::WhatsWrong( warnings );
@@ -7662,7 +7662,7 @@ void ShMtBendHook::WhatsWrong( WarningsArray & warnings ) {
   bool yes = true;
   for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ ) {
     if ( !m_params.m_typeAngle && ::fabs( m_bendObjects[i]->GetAbsAngle() ) + PARAM_NEAR >= M_PI ) {
-      // Р”РѕРїРѕР»РЅСЏСЋС‰РёР№ СѓРіРѕР» РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 360 РіСЂР°РґСѓСЃРѕРІ.
+      // Дополняющий угол должен быть меньше 360 градусов.
       warnings.AddWarning( IDP_SHMT_ERROR_BEND_HOOK_ADDED_ANGLE, module );
       yes = false;
       break;
@@ -7671,7 +7671,7 @@ void ShMtBendHook::WhatsWrong( WarningsArray & warnings ) {
 
   if ( yes )
     for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ ) {
-      // СѓРіРѕР» РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 180 РіСЂ.
+      // угол должен быть меньше 180 гр.
       if ( ::fabs( m_bendObjects[i]->GetAbsAngle() ) + PARAM_NEAR >= M_PI ) {
         warnings.AddWarning( IDP_SHMT_ERROR_BEND_HOOK_ANGLE, module );
         break;
@@ -7689,7 +7689,7 @@ bool ShMtBendHook::IsThisParent( uint8 relType, const WrapSomething & parent ) c
 
 
 //------------------------------------------------------------------------------
-// РїРµСЂРµРґ С‚РµРј РєР°Рє Р·Р°РєР°РЅС‡РёРІР°РµРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ
+// перед тем как заканчиваем редактирование
 // ---
 void ShMtBendHook::EditingEnd( const IfSheetMetalOperation & iniObj, const IfComponent & editComp ) {
   IFPTR( ShMtBendLine ) ini( const_cast<IfSheetMetalOperation*>(&iniObj) );
@@ -7703,7 +7703,7 @@ void ShMtBendHook::EditingEnd( const IfSheetMetalOperation & iniObj, const IfCom
 //
 //---
 double ShMtBendHook::GetThickness() const {
-  return m_params.m_thickness;    // С‚РѕР»С‰РёРЅР°
+  return m_params.m_thickness;    // толщина
 }
 
 
@@ -7711,7 +7711,7 @@ double ShMtBendHook::GetThickness() const {
 //
 //---
 void ShMtBendHook::SetThickness( double h ) {
-  m_params.m_thickness = h;    // С‚РѕР»С‰РёРЅР°
+  m_params.m_thickness = h;    // толщина
 }
 
 
@@ -7719,13 +7719,13 @@ void ShMtBendHook::SetThickness( double h ) {
 //
 //---
 double ShMtBendHook::GetOwnerAbsRadius() const {
-  //	return m_params.GetRadius();    // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
-  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+  //	return m_params.GetRadius();    // радиус сгиба
+  return m_params.m_internal ? m_params.GetRadius() : (m_params.GetRadius() - GetThickness());    // внутренний радиус сгиба
 }
 
 
 //---------------------------------------------------------------------------------
-// РљРѕСЌС„С„РёС†РёРµРЅС‚, РѕРїСЂРµРґРµР»СЏСЋС‰РёР№ РїРѕР»РѕР¶РµРЅРёРµ РЅРµР№С‚СЂР°Р»СЊРЅРѕРіРѕ СЃР»РѕСЏ
+// Коэффициент, определяющий положение нейтрального слоя
 //---
 double ShMtBendHook::GetOwnerValueBend() const {
   double val;
@@ -7743,7 +7743,7 @@ double ShMtBendHook::GetOwnerAbsAngle() const {
 
 
 //---------------------------------------------------------------------------------
-// РїРѕ РІРЅСѓС‚СЂРµРЅРЅРµРјСѓ СЂР°РґРёСѓСЃСѓ
+// по внутреннему радиусу
 //---
 bool ShMtBendHook::IsOwnerInternalRad() const {
   return m_params.m_internal;
@@ -7751,7 +7751,7 @@ bool ShMtBendHook::IsOwnerInternalRad() const {
 
 
 //---------------------------------------------------------------------------------
-// РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+// дать тип развертки
 //---
 UnfoldType ShMtBendHook::GetOwnerTypeUnfold() const {
   return m_params.m_typeUnfold;
@@ -7759,7 +7759,7 @@ UnfoldType ShMtBendHook::GetOwnerTypeUnfold() const {
 
 
 //---------------------------------------------------------------------------------
-// Р·Р°РґР°С‚СЊ С‚РёРї СЂР°Р·РІРµСЂС‚РєРё
+// задать тип развертки
 //---
 void ShMtBendHook::SetOwnerTypeUnfold( UnfoldType t ) {
   m_params.m_typeUnfold = t;
@@ -7767,12 +7767,12 @@ void ShMtBendHook::SetOwnerTypeUnfold( UnfoldType t ) {
 
 
 //------------------------------------------------------------------------
-// РµСЃР»Рё true, С‚Рѕ СЃРіРёР± РѕС‚ СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё РјРѕР¶РµС‚ РёРјРµС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ РѕС‚Р»РёС‡РЅС‹Рµ РѕС‚ РїР°РїС‹, РґР°Р¶Рµ РµСЃР»Рё РѕРЅ СЃРѕР·РґР°РЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј РїР°РїС‹
+// если true, то сгиб от этой операции может иметь параметры отличные от папы, даже если он создан по параметрам папы
 //---
 bool ShMtBendHook::HasBendIgnoreOwner() const {
   bool newAngle = false;
   if ( m_bendObjects.Count() == 2 ) {
-    // РµСЃР»Рё РІРІС‹СЃРѕС‚Р° РїРѕРґСЃРµС‡РєРё РјРµРЅСЊС€Рµ РјРёРЅРёРјР°Р»СЊРЅРѕР№, С‚Рѕ РЅР°РґРѕ СѓРјРµРЅСЊС€РёС‚СЊ СѓРіРѕР»
+    // если ввысота подсечки меньше минимальной, то надо уменьшить угол
     double hMin = m_bendObjects[0]->GetAbsRadius() + m_bendObjects[1]->GetAbsRadius() + GetThickness();
     if ( (m_params.GetHeight() - Math::LengthEps) < (hMin * (1 - ::cos( m_bendObjects[0]->GetAbsAngle() ))) )
       newAngle = true;
@@ -7807,7 +7807,7 @@ double ShMtBendHook::GetOwnerCoefficient() const {
 
 
 //---------------------------------------------------------------------------------
-// РµСЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РєР°РєРёРµ Р»РёР±Рѕ РїР°СЂР°РјРµС‚СЂС‹, Рё РµСЃС‚СЊ С‡С‚РµРЅРёРµ РєРѕСЌС„ РёР· Р±Р°Р·С‹, С‚Рѕ РїСЂРѕС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ
+// если изменились какие либо параметры, и есть чтение коэф из базы, то прочитать базу
 //---
 bool ShMtBendHook::IfOwnerBaseChanged( IfComponent * trans ) {
   return m_params.ReadBaseIfChanged( trans );
@@ -7815,7 +7815,7 @@ bool ShMtBendHook::IfOwnerBaseChanged( IfComponent * trans ) {
 
 
 //------------------------------------------------------------------------------
-// РіРѕРґРёС‚СЃСЏ Р»Рё РїСЂРёС€РµРґС€РёР№ РѕР±СЉРµРєС‚
+// годится ли пришедший объект
 // ---
 #ifdef MANY_THICKNESS_BODY_SHMT
 bool ShMtBendHook::IsSuitedObject( const WrapSomething & wrapper )
@@ -7824,7 +7824,7 @@ bool ShMtBendHook::IsSuitedObject( const WrapSomething & wrapper, double thickne
 #endif
 {
   bool res = false;
-  // РЁРђ K11 17.12.2008 РћС€РёР±РєР° в„–37142: Р—Р°РїСЂРµС‰СЏРµРј РІС‹Р±РѕСЂ СЂРµР±РµСЂ РјРЅРѕРіРѕС‡Р°СЃС‚РЅС‹С… С‚РµР»
+  // ША K11 17.12.2008 Ошибка №37142: Запрещяем выбор ребер многочастных тел
   if ( wrapper && wrapper.component == wrapper.editComponent && !::IsMultiShellBody( wrapper ) )
   {
 #ifdef MANY_THICKNESS_BODY_SHMT
@@ -7848,16 +7848,16 @@ bool ShMtBendHook::IsSuitedObject( const WrapSomething & wrapper, double thickne
 
 
 //------------------------------------------------------------------------------
-// РїРѕРґРіРѕС‚РѕРІРёС‚СЊСЃСЏ Рє РїРѕСЃС‚СЂРѕРµРЅРёСЋ
+// подготовиться к построению
 //---
-void ShMtBendHook::PrepareToBuild( const IfComponent & operOwner ) // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
+void ShMtBendHook::PrepareToBuild( const IfComponent & operOwner ) // компонент - владелец этой операции
 {
   creatorBendHooks = new CreatorForBendHookUnfoldParams( *this, (IfComponent*)&operOwner );
 }
 
 
 //------------------------------------------------------------------------------
-// РЅРµРєРёРµ РґРµР№СЃС‚РІРёСЏ РїРѕСЃР»Рµ РїРѕСЃС‚СЂРѕРµРЅРёСЏ
+// некие действия после построения
 //---
 void ShMtBendHook::PostBuild()
 {
@@ -7884,7 +7884,7 @@ bool ShMtBendHook::CopyInnerProps( const IfPartObject& source,
 
 
 //------------------------------------------------------------------------------
-// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРё РїР°СЂР°РјРµС‚СЂС‹
+// приготовить свои параметры
 // ---
 MbBendValues & ShMtBendHook::PrepareLocalParameters( const IfComponent * component ) {
   MbJogValues * params = new MbJogValues();
@@ -7897,10 +7897,10 @@ MbBendValues & ShMtBendHook::PrepareLocalParameters( const IfComponent * compone
       if ( anySurf ) {
         m_params.GetDepth( ref, *anySurf, curve, component );
         if ( component ) {
-          m_params.ReadBaseIfChanged( const_cast<IfComponent*>(component) ); // РµСЃР»Рё РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РІРµСЂС‚РєРё Р±СЂР°С‚СЊ РёР· Р±Р°Р·С‹, С‚Рѕ РїРµСЂРµС‡РёС‚Р°С‚СЊ Р±Р°Р·Сѓ, РµСЃР»Рё РЅР°РґРѕ
+          m_params.ReadBaseIfChanged( const_cast<IfComponent*>(component) ); // если параметры развертки брать из базы, то перечитать базу, если надо
           m_params.GetValues( *params );
 
-          // CC K8 РІ СЃС‚Р°СЂС‹С… РІРµСЂСЃРёСЏС… РІС‹С‡РёСЃР»РµРЅРёРµ СЃРјРµС‰РµРЅРёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЃСЏ СЃСЂР°Р·Сѓ
+          // CC K8 в старых версиях вычисление смещения производится сразу
           if ( GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0800000BL )
             m_params.CalcAfterValues( *params );
 
@@ -7913,15 +7913,15 @@ MbBendValues & ShMtBendHook::PrepareLocalParameters( const IfComponent * compone
 
 
 //---------------------------------------------------------------------------------
-// РїСЂРёРіРѕС‚РѕРІРёС‚СЊ СЃРІРѕРµ, С…Р°СЂР°РєС‚РµСЂРЅРѕРµ С‚РµР»Рѕ
+// приготовить свое, характерное тело
 //---
 uint ShMtBendHook::PrepareLocalSolid( MbCurve3D            & curve,
   RPArray<MbFace>      & mbFaces,
   MbSNameMaker         & nameMaker,
   MbSolid              & prevSolid,
-  MbBendValues         & params,    // СЃРІРѕРё СѓР¶Рµ РїСЂРёРіРѕС‚РѕРІР»РµРЅРЅС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
-  const IfComponent    * operOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† СЌС‚РѕР№ РѕРїРµСЂР°С†РёРё
-  const IfComponent    * bodyOwner, // РєРѕРјРїРѕРЅРµРЅС‚ - РІР»Р°РґРµР»РµС† С‚РµР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј СЌС‚Р° РѕРїРµСЂР°С†РёСЏ РїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
+  MbBendValues         & params,    // свои уже приготовленные параметры
+  const IfComponent    * operOwner, // компонент - владелец этой операции
+  const IfComponent    * bodyOwner, // компонент - владелец тела, над которым эта операция производиться
   WhatIsDone             wDone,
   uint                   idShellThread,
   MbSolid              *&result )
@@ -7942,14 +7942,14 @@ uint ShMtBendHook::PrepareLocalSolid( MbCurve3D            & curve,
       creatorBendHooks->GetParams( parsBend, m_params.m_dirAngle );
     }
 
-    // CC K8 РґР»СЏ РЅРѕРІС‹С… РІРµСЂСЃРёР№ РІС‹С‡РёСЃР»РµРЅРёРµ СЃРјРµС‰РµРЅРёСЏ РЅР°РґРѕ РїСЂРѕРёР·РІРѕРґРёС‚СЊ РІ СЃР°РјРѕРј РєРѕРЅС†Рµ
+    // CC K8 для новых версий вычисление смещения надо производить в самом конце
     if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
       m_params.CalcAfterValues( (MbBendOverSegValues&)params );
 
     bool yes = true;
     for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
     {
-      // СѓРіРѕР» РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РјРµРЅСЊС€Рµ 180 РіСЂ.
+      // угол должен быть меньше 180 гр.
       if ( ::fabs( m_bendObjects[i]->GetAbsAngle() ) + PARAM_NEAR >= M_PI )
       {
         yes = false;
@@ -7961,28 +7961,28 @@ uint ShMtBendHook::PrepareLocalSolid( MbCurve3D            & curve,
 
     if ( yes && IsValidParamBaseTable() )
     {
-      PArray<MbFace> par_1( 0, 1, false ); // РіСЂР°РЅРё РїРµСЂРІРѕРіРѕ СЃРіРёР±Р° РїРѕРґСЃРµС‡РєРё
-      PArray<MbFace> par_2( 0, 1, false ); // РіСЂР°РЅРё РІС‚РѕСЂРѕРіРѕ СЃРіРёР±Р° РїРѕРґСЃРµС‡РєРё
+      PArray<MbFace> par_1( 0, 1, false ); // грани первого сгиба подсечки
+      PArray<MbFace> par_2( 0, 1, false ); // грани второго сгиба подсечки
 
-      codeError = ::SheetSolidJog( prevSolid,                                   // РёСЃС…РѕРґРЅРѕРµ С‚РµР»Рѕ
+      codeError = ::SheetSolidJog( prevSolid,                                   // исходное тело
         wDone == wd_Phantom ? cm_Copy
-        : cm_KeepHistory,        // РќР“ СЂР°Р±РѕС‚Р°С‚СЊ СЃ РєРѕРїРёРµР№ РѕР±РѕР»РѕС‡РєРё РёСЃС…РѕРґРЅРѕРіРѕ С‚РµР»Р°
-        mbFaces,                                     // РёР·РіРёР±Р°РµРјС‹Рµ РіСЂР°РЅРё
-        curve,                                       // РїСЂСЏРјРѕР»РёРЅРµР№РЅР°СЏ РєСЂРёРІР°СЏ, РІРґРѕР»СЊ РєРѕС‚РѕСЂРѕР№ РіРЅСѓС‚СЊ
-                                                     /*РСЃРїСЂР°РІР»РµРЅРёРµ РѕС€РёР±РєРё 40270*/
-        GetObjVersion().GetVersionContainer().GetAppVersion() > 0x0C000001L || GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0A000001L ? false : IsStraighten(),                  // РіРЅСѓС‚СЊ
-        (MbJogValues&)params,                        // РїР°СЂР°РјРµС‚СЂС‹ Р»РёСЃС‚РѕРІРѕРіРѕ С‚РµР»Р°
-        secondBendParams,                            // РїР°СЂР°РјРµС‚СЂС‹ РІС‚РѕСЂРѕРіРѕ СЃРіРёР±Р°
-        nameMaker,                                        // РёРјРµРЅРѕРІР°С‚РµР»СЊ
-        par_1,                                       // РіСЂР°РЅРё РїРµСЂРІРѕРіРѕ СЃРіРёР±Р° РїРѕРґСЃРµС‡РєРё
-        par_2,                                       // РіСЂР°РЅРё РІС‚РѕСЂРѕРіРѕ СЃРіРёР±Р° РїРѕРґСЃРµС‡РєРё
-        result );                                    // СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµРµ С‚РµР»Рѕ
+        : cm_KeepHistory,        // НГ работать с копией оболочки исходного тела
+        mbFaces,                                     // изгибаемые грани
+        curve,                                       // прямолинейная кривая, вдоль которой гнуть
+                                                     /*Исправление ошибки 40270*/
+        GetObjVersion().GetVersionContainer().GetAppVersion() > 0x0C000001L || GetObjVersion().GetVersionContainer().GetAppVersion() < 0x0A000001L ? false : IsStraighten(),                  // гнуть
+        (MbJogValues&)params,                        // параметры листового тела
+        secondBendParams,                            // параметры второго сгиба
+        nameMaker,                                        // именователь
+        par_1,                                       // грани первого сгиба подсечки
+        par_2,                                       // грани второго сгиба подсечки
+        result );                                    // результирующее тело
 
       if ( creatorBendHooks && wDone != wd_Phantom )
       {
         creatorBendHooks->SetResult( result );
         if ( result && codeError == rt_Success )
-          // РЅР°РґРѕ Р·Р°РїРѕРјРЅРёС‚СЊ РІСЃРµ СЃРіРёР±С‹ Рё РёС… СЂР°РґРёСѓСЃР°
+          // надо запомнить все сгибы и их радиуса
           creatorBendHooks->InitFaces( par_1, par_2, MainId(), GetObjVersion() );
       }
     }
@@ -7993,7 +7993,7 @@ uint ShMtBendHook::PrepareLocalSolid( MbCurve3D            & curve,
 
 
 //------------------------------------------------------------------------------
-// Р’РѕР·РјРѕР¶РЅРѕ Р»Рё РґР»СЏ РїР°СЂР°РјРµС‚СЂР° Р·Р°РґР°РІР°С‚СЊ РґРѕРїСѓСЃРє
+// Возможно ли для параметра задавать допуск
 // ---
 bool ShMtBendHook::IsCanSetTolerance( const VarParameter & varParameter ) const
 {
@@ -8012,7 +8012,7 @@ bool ShMtBendHook::IsCanSetTolerance( const VarParameter & varParameter ) const
 
 
 //------------------------------------------------------------------------------
-// РЇРІР»СЏРµС‚СЃСЏ Р»Рё РїР°СЂР°РјРµС‚СЂ СѓРіР»РѕРІС‹Рј
+// Является ли параметр угловым
 // ---
 bool ShMtBendHook::ParameterIsAngular( const VarParameter & varParameter ) const
 {
@@ -8024,15 +8024,15 @@ bool ShMtBendHook::ParameterIsAngular( const VarParameter & varParameter ) const
 
 
 //------------------------------------------------------------------------------
-// Р”Р»СЏ РїР°СЂР°РјРµС‚СЂР° РїРѕР»СѓС‡РёС‚СЊ РЅРµСѓРєР°Р·Р°РЅРЅС‹Р№ РїСЂРµРґРµР»СЊРЅС‹Р№ РґРѕРїСѓСЃРє
+// Для параметра получить неуказанный предельный допуск
 // ---
 double ShMtBendHook::GetGeneralTolerance( const VarParameter & varParameter, GeneralToleranceType tType, ItToleranceReader & reader ) const
 {
   if ( &varParameter == &const_cast<ShMtBendHookParameters&>(m_params).GetAngleVar() )
   {
     //    double angle = m_params.m_typeAngle ? m_params.GetAngle() : 180 - m_params.GetAngle();
-    // CC K14 Р”Р»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїСѓСЃРєР° РёСЃРїРѕР»СЊР·СѓРµРј СЂР°РґРёСѓСЃ. РЎРѕРіР»Р°СЃРѕРІР°РЅРѕ СЃ Р‘СѓР»РіР°РєРѕРІС‹Рј
-    return reader.GetTolerance( m_params.m_distance, // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    // CC K14 Для получения допуска используем радиус. Согласовано с Булгаковым
+    return reader.GetTolerance( m_params.m_distance, // внешний радиус BUG 62631
       vd_angle,
       tType );
   }
@@ -8041,7 +8041,7 @@ double ShMtBendHook::GetGeneralTolerance( const VarParameter & varParameter, Gen
 
 
 //------------------------------------------------------------------------------------
-/// Р Р°СЃС‡РµС‚ РґСѓРіРё РґР»СЏ РїРµСЂРµСЃС‡РµС‚Р° СѓРіР»РѕРІС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕ РґРѕРїСѓСЃРєСѓ
+/// Расчет дуги для пересчета угловых параметров по допуску
 /**
 // \method    InitGeneralTolerances
 // \access    public
@@ -8053,7 +8053,7 @@ void ShMtBendHook::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
 {
   if ( recalc )
   {
-    // РЈ СЃРіРёР±РѕРІ Р±СЂР°С‚СЊ РЅР°РёРјРµРЅСЊС€РёР№ СЂР°РґРёСѓСЃ
+    // У сгибов брать наименьший радиус
     double rad = MB_MAXDOUBLE;
     for ( size_t i = 0, c = m_bendObjects.Count(); i < c; i++ )
     {
@@ -8062,16 +8062,16 @@ void ShMtBendHook::UpdateMeasurePars( GeneralToleranceType gType, bool recalc )
         rad = rad_i;
     }
 
-    m_params.m_distance = rad + GetThickness(); // РІРЅРµС€РЅРёР№ СЂР°РґРёСѓСЃ BUG 62631
+    m_params.m_distance = rad + GetThickness(); // внешний радиус BUG 62631
   }
 
   VariableParametersOwner::UpdateMeasurePars( gType, recalc );
 }
 
 
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
+// Создать хот-точки
 // ---
 void ShMtBendHook::GetHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -8081,17 +8081,17 @@ void ShMtBendHook::GetHotPoints( RPArray<HotPointParam> & hotPoints,
 {
   ShMtBaseBendLine::GetHotPoints( hotPoints, editComponent, topComponent, type, pD3DrawTool );
 
-  hotPoints.Add( new HotPointHookHeightParam( ehp_ShMtBendDistanceExtr, editComponent, topComponent ) ); // РІС‹СЃРѕС‚Р°
-  hotPoints.Add( new HotPointBendAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // СѓРіРѕР» СЃРіРёР±Р°
+  hotPoints.Add( new HotPointHookHeightParam( ehp_ShMtBendDistanceExtr, editComponent, topComponent ) ); // высота
+  hotPoints.Add( new HotPointBendAngleParam( ehp_ShMtBendAngle, editComponent, topComponent ) ); // угол сгиба
 }
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - СЃРґРІРёРЅСѓС‚Р°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРґРІРёРіР°
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
+\param hotPoint - сдвинутая хот-точка
+\param vector - вектор сдвига
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
 */
 //---
 bool ShMtBendHook::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & vector,
@@ -8118,8 +8118,8 @@ bool ShMtBendHook::ChangeHotPoint( HotPointParam & hotPoint, const MbVector3D & 
 
 //------------------------------------------------------------------------------
 /**
-РЎРїСЂСЏС‚Р°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
+Спрятать хот-точки
+\param hotPoints - массив хот-точек
 */
 //---
 void ShMtBendHook::HideAllHotPoints( RPArray<HotPointParam> & hotPoints )
@@ -8134,11 +8134,11 @@ void ShMtBendHook::HideAllHotPoints( RPArray<HotPointParam> & hotPoints )
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ РІС‹СЃРѕС‚С‹
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
-\param util - СѓС‚РёР»РёС‚Р° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
-\param secondBendParameters - РїР°СЂР°РјРµС‚СЂС‹ СЃРіРёР±Р°
-\param drawTool - РёРЅСЃС‚СЂСѓРјРµРЅС‚ СЂРёСЃРѕРІР°РЅРёСЏ
+Обновить хот-точку высоты
+\param hotPoints - массив хот-точек
+\param util - утилита для расчета хот-точек
+\param secondBendParameters - параметры сгиба
+\param drawTool - инструмент рисования
 */
 //---
 void ShMtBendHook::UpdateDistanceExtrHotPoint( RPArray<HotPointParam> & hotPoints,
@@ -8157,8 +8157,8 @@ void ShMtBendHook::UpdateDistanceExtrHotPoint( RPArray<HotPointParam> & hotPoint
 
 //------------------------------------------------------------------------------
 /**
-РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РІС‚РѕСЂРѕРј СЃРіРёР±Рµ
-\return РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РІС‚РѕСЂРѕРј СЃРіРёР±Рµ
+Следует ли производить расчеты хот-точки радиуса на втором сгибе
+\return Следует ли производить расчеты хот-точки радиуса на втором сгибе
 */
 //---
 bool ShMtBendHook::IsRadiusHotPointBySecondBend()
@@ -8177,8 +8177,8 @@ bool ShMtBendHook::IsRadiusHotPointBySecondBend()
 
 //------------------------------------------------------------------------------
 /**
-РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РїРµСЂРІРѕРј СЃРіРёР±Рµ
-\return РЎР»РµРґСѓРµС‚ Р»Рё РїСЂРѕРёР·РІРѕРґРёС‚СЊ СЂР°СЃС‡РµС‚С‹ С…РѕС‚-С‚РѕС‡РєРё СЂР°РґРёСѓСЃР° РЅР° РїРµСЂРІРѕРј СЃРіРёР±Рµ
+Следует ли производить расчеты хот-точки радиуса на первом сгибе
+\return Следует ли производить расчеты хот-точки радиуса на первом сгибе
 */
 //---
 bool ShMtBendHook::IsRadiusHotPointByFirstBend()
@@ -8197,9 +8197,9 @@ bool ShMtBendHook::IsRadiusHotPointByFirstBend()
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР°, СѓСЃС‚Р°РЅРѕРІРёРІ РµС‘ РЅР° СЃРіРёР±Рµ СЃРѕР·РґР°РЅРЅРѕРј РїРѕ РёСЃС…РѕРґРЅРѕРјСѓ РѕР±СЉРµРєС‚Сѓ
-\param hotPoints - РјР°СЃСЃРёРІ С…РѕС‚-С‚РѕС‡РµРє
-\param util - СѓС‚РёР»РёРЅР° РґР»СЏ СЂР°СЃС‡РµС‚Р° С…РѕС‚-С‚РѕС‡РµРє
+Обновить хот-точку радиуса, установив её на сгибе созданном по исходному объекту
+\param hotPoints - массив хот-точек
+\param util - утилина для расчета хот-точек
 */
 //---
 void ShMtBendHook::UpdateRadiusHotPointByBendObjects( RPArray<HotPointParam> & hotPoints,
@@ -8236,7 +8236,7 @@ void ShMtBendHook::UpdateRadiusHotPointByBendObjects( RPArray<HotPointParam> & h
 
 //------------------------------------------------------------------------------
 /**
-РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РєРё
+Пересчитать местоположение хот-точки
 \param hotPoints -
 \param type -
 \param pD3DrawTool -
@@ -8289,7 +8289,7 @@ std::unique_ptr<HotPointBendHookOperUtil> ShMtBendHook::GetHotPointUtil( MbJogVa
     if ( curveEdge )
     {
       PArray<MbFace> arrayFaces( 0, 1, false );
-      CollectFaces( arrayFaces, editComponent, children ? children->m_extraName : -1 ); // СЃРѕР±СЂР°С‚СЊ РІСЃРµ РіСЂР°РЅРё
+      CollectFaces( arrayFaces, editComponent, children ? children->m_extraName : -1 ); // собрать все грани
       if ( arrayFaces.Count() ) {
         params = (MbJogValues*)&PrepareLocalParameters( &editComponent );
 
@@ -8307,7 +8307,7 @@ std::unique_ptr<HotPointBendHookOperUtil> ShMtBendHook::GetHotPointUtil( MbJogVa
         creatorBends.GetParams( *params, secondBendParams, m_params.m_dirAngle );
         */
         if ( GetObjVersion().GetVersionContainer().GetAppVersion() >= 0x0800000BL )
-          // РЎРјРµС‰РµРЅРёРµ РїРѕСЃС‡РёС‚Р°С‚СЊ РїРѕСЃР»Рµ РІСЃРµС… РІС‹С‡РёСЃР»РµРЅРёР№
+          // Смещение посчитать после всех вычислений
           m_params.CalcAfterValues( *params );
 
 
@@ -8331,7 +8331,7 @@ std::unique_ptr<HotPointBendHookOperUtil> ShMtBendHook::GetHotPointUtil( MbJogVa
 
 
 //------------------------------------------------------------------------------
-// РЎРѕР·РґР°С‚СЊ С…РѕС‚-С‚РѕС‡РєРё (Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅС‹ РёРЅРґРµРєСЃС‹ СЃ 5000 РґРѕ 5999)
+// Создать хот-точки (зарезервированы индексы с 5000 до 5999)
 // ---
 void ShMtBendHook::GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   IfComponent &            editComponent,
@@ -8339,17 +8339,17 @@ void ShMtBendHook::GetChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
   ShMtBendObject &         children )
 {
   hotPoints.Add( new HotPointBendHookObjectRadiusParam( ehp_ShMtBendObjectRadius,
-    editComponent, topComponent ) ); // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+    editComponent, topComponent ) ); // радиус сгиба
 }
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЂР°СЃС‡РµС‚ РїСЂРё РїРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРё С…РѕС‚-С‚РѕС‡РєРё
+// Перерасчет при перетаскивании хот-точки
 /**
-\param hotPoint - РїРµСЂРµС‚Р°СЃРєРёРІР°РµРјР°СЏ С…РѕС‚-С‚РѕС‡РєР°
-\param vector - РІРµРєС‚РѕСЂ СЃРјРµС‰РµРЅРёСЏ
-\param step - С€Р°Рі РґРёСЃРєСЂРµС‚РЅРѕСЃС‚Рё, РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРјРµС‰РµРЅРёСЏ СЃ Р·Р°РґР°РЅРЅС‹Рј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј С€Р°РіРѕРј
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoint - перетаскиваемая хот-точка
+\param vector - вектор смещения
+\param step - шаг дискретности, для определения смещения с заданным пользователем шагом
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 bool ShMtBendHook::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
@@ -8363,7 +8363,7 @@ bool ShMtBendHook::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
     ret = ShMtBaseBendLine::ChangeChildrenHotPoint( hotPoint, vector, step, children );
   else
   {
-    if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius ) // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+    if ( hotPoint.GetIdent() == ehp_ShMtBendObjectRadius ) // радиус сгиба
       ret = ((HotPointBendHookObjectRadiusParam &)hotPoint).SetRadiusHotPoint_2( vector, step,
         GetParameters(),
         children );
@@ -8374,7 +8374,7 @@ bool ShMtBendHook::ChangeChildrenHotPoint( HotPointParam &  hotPoint,
 
 
 //-----------------------------------------------------------------------------
-/// РёР·РјРµРЅРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+/// изменить уникальное имя параметра
 //---
 void ShMtBendHook::RenameUnique( IfUniqueName & un ) {
   ShMtBaseBendLine::RenameUnique( un );
@@ -8384,8 +8384,8 @@ void ShMtBendHook::RenameUnique( IfUniqueName & un ) {
 
 //------------------------------------------------------------------------------
 /**
-РјРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
-\return РјРѕРіСѓС‚ Р»Рё Рє РѕР±СЉРµРєС‚Сѓ Р±С‹С‚СЊ РїСЂРёРІСЏР·Р°РЅС‹ СѓРїСЂР°РІР»СЏСЋС‰РёРµ СЂР°Р·РјРµСЂС‹
+могут ли к объекту быть привязаны управляющие размеры
+\return могут ли к объекту быть привязаны управляющие размеры
 */
 //---
 bool ShMtBendHook::IsDimensionsAllowed() const
@@ -8396,8 +8396,8 @@ bool ShMtBendHook::IsDimensionsAllowed() const
 
 //------------------------------------------------------------------------------
 /**
-Р°СЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ СЃ РїРµСЂРµРјРµРЅРЅС‹РјРё СЂРѕРґРёС‚РµР»СЏ
-\param dimensions - СЂР°Р·РјРµСЂС‹
+ассоциировать размеры с переменными родителя
+\param dimensions - размеры
 */
 //---
 void ShMtBendHook::AssignDimensionsVariables( const SFDPArray<PartObject> & dimensions )
@@ -8412,10 +8412,10 @@ void ShMtBendHook::AssignDimensionsVariables( const SFDPArray<PartObject> & dime
 
 //------------------------------------------------------------------------------
 /**
-СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
+создать размеры объекта по хот-точкам
 \param un -
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBendHook::CreateDimensionsByHotPoints( IfUniqueName * un,
@@ -8445,9 +8445,9 @@ void ShMtBendHook::CreateDimensionsByHotPoints( IfUniqueName * un,
 
 //------------------------------------------------------------------------------
 /**
-РђСЃСЃРѕС†РёРёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂС‹ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ - СЃРіРёР±РѕРІ
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param children - РґРѕС‡РµСЂРЅРёР№ СЃРіРёР±
+Ассоциировать размеры дочерних объектов - сгибов
+\param dimensions - размеры
+\param children - дочерний сгиб
 */
 //---
 void ShMtBendHook::AssingChildrenDimensionsVariables( const SFDPArray<PartObject> & dimensions,
@@ -8459,10 +8459,10 @@ void ShMtBendHook::AssingChildrenDimensionsVariables( const SFDPArray<PartObject
 
 //------------------------------------------------------------------------------
 /**
-СЃРѕР·РґР°С‚СЊ СЂР°Р·РјРµСЂС‹ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
+создать размеры объекта по хот-точкам для дочерних объектов
 \param un -
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBendHook::CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
@@ -8483,10 +8483,10 @@ void ShMtBendHook::CreateChildrenDimensionsByHotPoints( IfUniqueName * un,
 
 //------------------------------------------------------------------------------
 /**
-РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј РґР»СЏ РґРѕС‡РµСЂРЅРёС… РѕР±СЉРµРєС‚РѕРІ
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param children - РґРѕС‡РµСЂРЅРёР№ СЃРіРёР±
+обновить геометрию размеров объекта по хот-точкам для дочерних объектов
+\param dimensions - размеры
+\param hotPoints - хот-точки
+\param children - дочерний сгиб
 */
 //---
 void ShMtBendHook::UpdateChildrenDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -8499,9 +8499,9 @@ void ShMtBendHook::UpdateChildrenDimensionsByHotPoints( const SFDPArray<Generati
 
 //------------------------------------------------------------------------------
 /**
-РѕР±РЅРѕРІРёС‚СЊ РіРµРѕРјРµС‚СЂРёСЋ СЂР°Р·РјРµСЂРѕРІ РѕР±СЉРµРєС‚Р° РїРѕ С…РѕС‚-С‚РѕС‡РєР°Рј
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+обновить геометрию размеров объекта по хот-точкам
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBendHook::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -8528,8 +8528,8 @@ void ShMtBendHook::UpdateDimensionsByHotPoints( const SFDPArray<GenerativeDimens
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅРЅС‹
-\param dimensions - СЂР°Р·РјРµСЂС‹
+Обнулить размер длинны
+\param dimensions - размеры
 */
 //---
 void ShMtBendHook::ResetLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions )
@@ -8544,8 +8544,8 @@ void ShMtBendHook::ResetLengthDimension( const SFDPArray<GenerativeDimensionDesc
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ РґР»РёРЅРЅС‹
-\param dimensions - СЂР°Р·РјРµСЂС‹
+Обнулить размер длинны
+\param dimensions - размеры
 */
 //---
 void ShMtBendHook::ResetAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions )
@@ -8560,9 +8560,9 @@ void ShMtBendHook::ResetAngleDimension( const SFDPArray<GenerativeDimensionDescr
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅСѓР»РёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param radiusDimensionId - id Р Р°Р·РјРµСЂР°
+Обнулить размер радиуса
+\param dimensions - размеры
+\param radiusDimensionId - id Размера
 */
 //---
 void ShMtBendHook::ResetRadiusDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions, EDimensionsIds radiusDimensionId )
@@ -8577,9 +8577,9 @@ void ShMtBendHook::ResetRadiusDimension( const SFDPArray<GenerativeDimensionDesc
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СѓРіР»Р° СЃРіРёР±Р°
-\param pDimensions - СЂР°Р·РјРµСЂС‹ РѕРїРµСЂР°С†РёРё
-\param pUtils - РїР°СЂР°РјРµС‚СЂС‹ С…РѕС‚-С‚РѕС‡РµРє
+Обновить размер угла сгиба
+\param pDimensions - размеры операции
+\param pUtils - параметры хот-точек
 */
 //---
 void ShMtBendHook::UpdateAngleDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -8607,11 +8607,11 @@ void ShMtBendHook::UpdateAngleDimension( const SFDPArray<GenerativeDimensionDesc
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёСЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СѓРіР»Р°
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param dimensionCenter - С†РµРЅС‚СЂ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получиь параметры размера угла
+\param hotPoints - хот-точки
+\param dimensionCenter - центр размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBendHook::GetAngleDimensionParameters( const RPArray<HotPointParam> & hotPoints,
@@ -8650,9 +8650,9 @@ bool ShMtBendHook::GetAngleDimensionParameters( const RPArray<HotPointParam> & h
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°РґРёСѓСЃР°
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+Обновить размер радиуса
+\param dimensions - размеры
+\param hotPoints - хот-точки
 \param radiusHotPointId -
 \param radiusDimensionId -
 \param internal -
@@ -8688,7 +8688,7 @@ void ShMtBendHook::UpdateRadiusDimension( const SFDPArray<GenerativeDimensionDes
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°РґРёСѓСЃР°
+Получить параметры размера радиуса
 */
 //---
 bool ShMtBendHook::GetRadiusDimensionParameters( HotPointBendLineRadiusParam * radiusHotPoint, bool moveToInternal,
@@ -8703,7 +8703,7 @@ bool ShMtBendHook::GetRadiusDimensionParameters( HotPointBendLineRadiusParam * r
 
   MbArc3D arc( radiusHotPoint->m_bendExternalArc, radiusHotPoint->m_bendExternalArc.GetTMin(), radiusHotPoint->m_bendExternalArc.GetTMax(), 1 );
 
-  // РїРµСЂРµРјРµС‰РµРЅРёРµ РЅР° РІРЅСѓС‚СЂРµРЅРЅРёР№ СЂР°РґРёСѓСЃ
+  // перемещение на внутренний радиус
   if ( moveToInternal )
   {
     arc.SetRadiusA( arc.GetRadiusA() - m_params.m_thickness );
@@ -8725,9 +8725,9 @@ bool ShMtBendHook::GetRadiusDimensionParameters( HotPointBendLineRadiusParam * r
 
 //------------------------------------------------------------------------------
 /**
-РћР±РЅРѕРІРёС‚СЊ СЂР°Р·РјРµСЂ СЂР°СЃСЃС‚РѕСЏРЅРёСЏ
-\param dimensions - СЂР°Р·РјРµСЂС‹
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
+Обновить размер расстояния
+\param dimensions - размеры
+\param hotPoints - хот-точки
 */
 //---
 void ShMtBendHook::UpdateLengthDimension( const SFDPArray<GenerativeDimensionDescriptor> & dimensions,
@@ -8771,11 +8771,11 @@ void ShMtBendHook::UpdateLengthDimension( const SFDPArray<GenerativeDimensionDes
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - СЃРЅР°СЂСѓР¶Рё
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param dimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера расстояния - снаружи
+\param hotPoints - хот-точки
+\param dimensionPlacement - положение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBendHook::GetLengthDimensionParametersByOut( const RPArray<HotPointParam> & hotPoints,
@@ -8814,11 +8814,11 @@ bool ShMtBendHook::GetLengthDimensionParametersByOut( const RPArray<HotPointPara
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - РІРЅСѓС‚СЂРё
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param dimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера расстояния - внутри
+\param hotPoints - хот-точки
+\param dimensionPlacement - положение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBendHook::GetLengthDimensionParametersByIn( const RPArray<HotPointParam> & hotPoints,
@@ -8857,11 +8857,11 @@ bool ShMtBendHook::GetLengthDimensionParametersByIn( const RPArray<HotPointParam
 
 //------------------------------------------------------------------------------
 /**
-РџРѕР»СѓС‡РёС‚СЊ РїР°СЂР°РјРµС‚СЂС‹ СЂР°Р·РјРµСЂР° СЂР°СЃСЃС‚РѕСЏРЅРёСЏ - РїРѕР»РЅС‹Р№
-\param hotPoints - С…РѕС‚-С‚РѕС‡РєРё
-\param dimensionPlacement - РїРѕР»РѕР¶РµРЅРёРµ СЂР°Р·РјРµСЂР°
-\param dimensionPoint1 - С‚РѕС‡РєР° 1 СЂР°Р·РјРµСЂР°
-\param dimensionPoint2 - С‚РѕС‡РєР° 2 СЂР°Р·РјРµСЂР°
+Получить параметры размера расстояния - полный
+\param hotPoints - хот-точки
+\param dimensionPlacement - положение размера
+\param dimensionPoint1 - точка 1 размера
+\param dimensionPoint2 - точка 2 размера
 */
 //---
 bool ShMtBendHook::GetLengthDimensionParametersByAll( const RPArray<HotPointParam> & hotPoints,
@@ -8899,10 +8899,10 @@ bool ShMtBendHook::GetLengthDimensionParametersByAll( const RPArray<HotPointPara
 
 
 //-----------------------------------------------------------------------------
-// РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ РјРµСЃС‚РѕРїРѕР»РѕР¶РµРЅРёРµ С…РѕС‚-С‚РѕС‡РµРє
+// Пересчитать местоположение хот-точек
 /**
-\param hotPoints - С…РѕС‚-С‚РѕС‡РµРєРё
-\param children - СЃРіРёР±, РґР»СЏ РєРѕС‚РѕСЂРѕРіРѕ РѕРїСЂРµРґРµР»СЏРµРј С…РѕС‚-С‚РѕС‡РєРё
+\param hotPoints - хот-точеки
+\param children - сгиб, для которого определяем хот-точки
 */
 //---
 void ShMtBendHook::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
@@ -8912,11 +8912,11 @@ void ShMtBendHook::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
 
   if ( !children.m_byOwner )
   {
-    // С…РѕС‚-С‚РѕС‡РєСѓ СЂР°РґРёСѓСЃР° РѕС‚РѕР±СЂР°Р¶Р°РµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЃРіРёР± РІС‹РїРѕР»РЅРµРЅ РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј СЃР°РјРѕРіРѕ СЃРіРёР±Р°
+    // хот-точку радиуса отображаем только если сгиб выполнен по параметрам самого сгиба
     for ( size_t i = 0, c = hotPoints.Count(); i < c; i++ )
     {
       HotPointParam * hotPoint = hotPoints[i];
-      if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // СЂР°РґРёСѓСЃ СЃРіРёР±Р°
+      if ( hotPoint->GetIdent() == ehp_ShMtBendObjectRadius ) // радиус сгиба
       {
         MbJogValues * params = nullptr;
         MbBendValues  secondBendParams;
@@ -8932,7 +8932,7 @@ void ShMtBendHook::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
           hotPointBend->params = *params;
           hotPointBend->m_deepness = params->displacement;
 
-          if ( children.m_ind % 2 == 0 ) // С‡РµС‚РЅРѕРµ
+          if ( children.m_ind % 2 == 0 ) // четное
             util->UpdateRadiusHotPoint_2( *hotPoint, *params, children.m_radius, children.m_internal );
           else
             util->UpdateRadiusHotPoint( *hotPoint, *params, (ShMtBendLineParameters &)GetParameters() );
@@ -8952,7 +8952,7 @@ void ShMtBendHook::UpdateChildrenHotPoints( RPArray<HotPointParam> & hotPoints,
       hotPoints[i]->SetBasePoint( nullptr );
     }
 }
-// *** РҐРѕС‚-С‚РѕС‡РєРё ***************************************************************
+// *** Хот-точки ***************************************************************
 
 
 IMP_PERSISTENT_CLASS( kompasDeprecatedAppID, ShMtBendHook );
@@ -8961,7 +8961,7 @@ IMP_PROC_REGISTRATION( ShMtBendHook );
 
 //--------------------------------------------------------------------------------
 /**
-РќРµРѕР±С…РѕРґРёРјРѕ Р»Рё СЃРѕС…СЂР°РЅРµРЅРёРµ Р±РµР· РёСЃС‚РѕСЂРёРё
+Необходимо ли сохранение без истории
 \param version
 \return bool
 */
@@ -8973,7 +8973,7 @@ bool ShMtBendHook::IsNeedSaveAsUnhistored( long version ) const
 
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ РёР· РїРѕС‚РѕРєР°
+// Чтение из потока
 // ---
 void ShMtBendHook::Read( reader &in, ShMtBendHook * obj ) {
   ReadBase( in, static_cast<ShMtBaseBendLine *>(obj) );
@@ -8983,11 +8983,11 @@ void ShMtBendHook::Read( reader &in, ShMtBendHook * obj ) {
 
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РІ РїРѕС‚РѕРє
+// Запись в поток
 // ---
 void ShMtBendHook::Write( writer &out, const ShMtBendHook * obj ) {
   if ( out.AppVersion() < 0x0700010FL )
-    out.setState( io::cantWriteObject ); // СЃРїРµС†РёР°Р»СЊРЅРѕ РІРІРµРґРµРЅРЅС‹Р№ С‚РёРї РѕС€РёР±РѕС‡РЅРѕР№ СЃРёС‚СѓР°С†РёРё
+    out.setState( io::cantWriteObject ); // специально введенный тип ошибочной ситуации
   else {
     WriteBase( out, static_cast<const ShMtBaseBendLine *>(obj) );
     out << obj->m_upToObject;
@@ -8997,7 +8997,7 @@ void ShMtBendHook::Write( writer &out, const ShMtBendHook * obj ) {
 
 
 //------------------------------------------------------------------------------
-// РЎРіРёР±
+// Сгиб
 // ---
 _OBJ01FUNC( IfShMtBend * ) CreateShMtBend( ShMtBendParameters & _pars, IfUniqueName * un )
 {
@@ -9014,7 +9014,7 @@ _OBJ01FUNC( IfShMtBend * ) CreateShMtBend( ShMtBendParameters & _pars, IfUniqueN
 
 
 //------------------------------------------------------------------------------
-// РЎРіРёР± РїРѕ Р»РёРЅРёРё
+// Сгиб по линии
 // ---
 _OBJ01FUNC( IfShMtBendLine * ) CreateShMtBendLine( ShMtBendLineParameters & _pars,
   IfUniqueName * un )
@@ -9032,7 +9032,7 @@ _OBJ01FUNC( IfShMtBendLine * ) CreateShMtBendLine( ShMtBendLineParameters & _par
 
 
 //------------------------------------------------------------------------------
-// РџРѕРґСЃРµС‡РєР°
+// Подсечка
 // ---
 _OBJ01FUNC( IfShMtBendLine * ) CreateShMtBendHook( ShMtBendHookParameters & _pars,
   IfUniqueName * un )
